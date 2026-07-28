@@ -1,0 +1,41 @@
+# Manual-only deploy to Azure Static Web Apps.
+# Triggered ONLY when you click Actions -> this workflow -> "Run workflow".
+# There are intentionally NO push / pull_request triggers, so a plain push never deploys.
+name: Deploy to Azure Static Web Apps (manual)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    name: Build and deploy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          # Force installs to resolve from PUBLIC npm (never a private/corporate mirror).
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: npm ci --registry=https://registry.npmjs.org
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: upload
+          # We already built above; upload the prebuilt output as-is.
+          skip_app_build: true
+          app_location: "dist"
+          output_location: ""
