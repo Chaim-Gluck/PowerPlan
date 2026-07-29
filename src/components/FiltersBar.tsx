@@ -16,11 +16,13 @@ export default function FiltersBar() {
     <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }} sx={{ mb: 1 }}>
       <DatePicker
         label="From" value={dateRange[0]} minDate={min} maxDate={max}
+        format="DD/MM/YYYY"
         onChange={(v) => setDateRange([v, dateRange[1]])}
         slotProps={{ textField: { size: 'small' } }}
       />
       <DatePicker
         label="To" value={dateRange[1]} minDate={min} maxDate={max}
+        format="DD/MM/YYYY"
         onChange={(v) => setDateRange([dateRange[0], v])}
         slotProps={{ textField: { size: 'small' } }}
       />

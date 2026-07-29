@@ -40,3 +40,7 @@ coverage/
 # Azure CLI local state
 .azure/
 
+# Generated export artifacts (created when running the exporters in Node during tests)
+/powerplan-comparison.pdf
+/powerplan-comparison.xlsx
+

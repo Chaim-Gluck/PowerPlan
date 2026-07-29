@@ -4,6 +4,9 @@ Public-safe context for humans and AI agents working on this repo. **No secrets,
 cloud resource names, no personal data here** — operational specifics live in the
 git-ignored `NOTES.local.md`.
 
+> 📓 **Design & decision rationale** (why versions are pinned, why boundaries are
+> cosmetic, why the mobile bottom nav, etc.) lives in **[docs/DECISIONS.md](./docs/DECISIONS.md)**.
+
 ## What this app is
 **PowerPlan** is a fully local, browser-only analytics dashboard that tells you **which
 electricity tariff plan would have been cheapest** given your **real historical

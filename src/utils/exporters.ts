@@ -2,7 +2,7 @@ import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import autoTableDefault from 'jspdf-autotable';
 import type { ComparisonResult } from '../pricing';
-import { formatNIS, formatKWh, formatPercent } from './format';
+import { formatPercent } from './format';
 
 // jspdf-autotable ships CJS; depending on the bundler the default import may be
 // either the function itself or `{ default: fn }`. Normalise so it's callable
@@ -41,13 +41,16 @@ export function exportComparisonExcel(result: ComparisonResult): void {
 /** Export the comparison table to a PDF report. */
 export function exportComparisonPdf(result: ComparisonResult): void {
   const doc = new jsPDF();
+  // jsPDF's built-in fonts only support WinAnsi/Latin-1, so avoid the New Sheqel
+  // sign (₪, U+20AA) and other non-Latin-1 glyphs — they corrupt text rendering.
+  // Money is shown as plain numbers with "NIS" in the column headers instead.
+  const num = (v: number) => Math.round(v).toLocaleString('en-US');
+
   doc.setFontSize(16);
-  doc.text('PowerPlan — Tariff Comparison', 14, 18);
+  doc.text('PowerPlan - Tariff Comparison', 14, 18);
   doc.setFontSize(10);
   doc.text(
-    `Base price: ${formatNIS(result.basePrice, 4)}/kWh   •   Total: ${formatKWh(
-      result.totalConsumption,
-    )}   •   ${result.monthCount} months`,
+    `Base price: NIS ${result.basePrice.toFixed(4)}/kWh   |   Total: ${num(result.totalConsumption)} kWh   |   ${result.monthCount} months`,
     14,
     26,
   );
@@ -57,20 +60,20 @@ export function exportComparisonPdf(result: ComparisonResult): void {
     head: [[
       'Plan',
       'Supplier',
-      'Total Cost',
-      'Savings vs Base',
+      'Total (NIS)',
+      'Savings (NIS)',
       'Savings %',
-      'Avg Monthly',
-      'Est. Yearly',
+      'Avg/mo (NIS)',
+      'Est./yr (NIS)',
     ]],
     body: result.comparisons.map((c) => [
-      c.planName + (c.isCheapest ? '  ★' : ''),
+      c.planName + (c.isCheapest ? '  *' : ''),
       c.supplier ?? '',
-      formatNIS(c.totalCost),
-      formatNIS(c.savings),
+      num(c.totalCost),
+      num(c.savings),
       formatPercent(c.savingsPercent),
-      formatNIS(c.averageMonthlyCost),
-      formatNIS(c.estimatedYearlyCost),
+      num(c.averageMonthlyCost),
+      num(c.estimatedYearlyCost),
     ]),
     styles: { fontSize: 9 },
     headStyles: { fillColor: [25, 118, 210] },
