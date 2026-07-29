@@ -45,6 +45,8 @@ export default function ComparisonPage() {
 
   const selected = comparison.comparisons.find((c) => c.planId === selectedPlanId) ?? comparison.comparisons[0];
   const bundleIds = new Set(plans.filter((p) => p.bundleOnly).map((p) => p.id));
+  // Secondary columns hidden on phones so the key ones (Plan, Total, Savings %) fit without scrolling.
+  const hideSm = { display: { xs: 'none', md: 'table-cell' } } as const;
 
   return (
     <Stack spacing={3}>
@@ -60,16 +62,16 @@ export default function ComparisonPage() {
 
       {/* Comparison table */}
       <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
-        <Table>
+        <Table size="small">
           <TableHead>
             <TableRow>
               <TableCell>#</TableCell>
               <TableCell>Plan</TableCell>
               <TableCell align="right">Total cost</TableCell>
-              <TableCell align="right">Savings vs base</TableCell>
+              <TableCell align="right" sx={hideSm}>Savings vs base</TableCell>
               <TableCell align="right">Savings %</TableCell>
-              <TableCell align="right">Avg monthly</TableCell>
-              <TableCell align="right">Est. yearly</TableCell>
+              <TableCell align="right" sx={hideSm}>Avg monthly</TableCell>
+              <TableCell align="right" sx={hideSm}>Est. yearly</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -77,10 +79,10 @@ export default function ComparisonPage() {
               <TableCell>—</TableCell>
               <TableCell><b>IEC — full tariff</b> (stay with the default supplier, no discount)</TableCell>
               <TableCell align="right">{formatNIS(comparison.baseCost)}</TableCell>
+              <TableCell align="right" sx={hideSm}>—</TableCell>
               <TableCell align="right">—</TableCell>
-              <TableCell align="right">—</TableCell>
-              <TableCell align="right">{formatNIS(comparison.baseCost / Math.max(comparison.monthCount, 1))}</TableCell>
-              <TableCell align="right">{formatNIS((comparison.baseCost / Math.max(comparison.monthCount, 1)) * 12)}</TableCell>
+              <TableCell align="right" sx={hideSm}>{formatNIS(comparison.baseCost / Math.max(comparison.monthCount, 1))}</TableCell>
+              <TableCell align="right" sx={hideSm}>{formatNIS((comparison.baseCost / Math.max(comparison.monthCount, 1)) * 12)}</TableCell>
             </TableRow>
             {comparison.comparisons.map((c) => (
               <TableRow
@@ -91,25 +93,29 @@ export default function ComparisonPage() {
               >
                 <TableCell>{c.rank}</TableCell>
                 <TableCell>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: c.color ?? 'primary.main' }} />
+                  <Stack direction="row" spacing={1} alignItems="flex-start">
+                    <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: c.color ?? 'primary.main', mt: 0.6, flexShrink: 0 }} />
                     <Box>
                       {c.planName}
                       {c.supplier && (
-                        <Typography variant="caption" display="block" color="text.secondary" sx={{ lineHeight: 1 }}>
+                        <Typography variant="caption" display="block" color="text.secondary" sx={{ lineHeight: 1.1 }}>
                           {c.supplier}
                         </Typography>
                       )}
+                      {(c.isCheapest || bundleIds.has(c.planId)) && (
+                        <Stack direction="row" spacing={0.5} sx={{ mt: 0.5, flexWrap: 'wrap', gap: 0.5 }}>
+                          {c.isCheapest && <Chip size="small" color="success" label="Cheapest" />}
+                          {bundleIds.has(c.planId) && <Chip size="small" color="warning" variant="outlined" label="Bundle" />}
+                        </Stack>
+                      )}
                     </Box>
-                    {c.isCheapest && <Chip size="small" color="success" label="Cheapest" />}
-                    {bundleIds.has(c.planId) && <Chip size="small" color="warning" variant="outlined" label="Bundle" />}
                   </Stack>
                 </TableCell>
                 <TableCell align="right">{formatNIS(c.totalCost)}</TableCell>
-                <TableCell align="right" sx={{ color: 'success.main' }}>{formatNIS(c.savings)}</TableCell>
+                <TableCell align="right" sx={{ color: 'success.main', ...hideSm }}>{formatNIS(c.savings)}</TableCell>
                 <TableCell align="right">{formatPercent(c.savingsPercent)}</TableCell>
-                <TableCell align="right">{formatNIS(c.averageMonthlyCost)}</TableCell>
-                <TableCell align="right">{formatNIS(c.estimatedYearlyCost)}</TableCell>
+                <TableCell align="right" sx={hideSm}>{formatNIS(c.averageMonthlyCost)}</TableCell>
+                <TableCell align="right" sx={hideSm}>{formatNIS(c.estimatedYearlyCost)}</TableCell>
               </TableRow>
             ))}
           </TableBody>

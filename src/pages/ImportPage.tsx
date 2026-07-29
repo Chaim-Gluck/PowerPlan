@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import {
   Button, Card, CardContent, Typography, Stack, Alert, Chip, LinearProgress,
-  Table, TableBody, TableCell, TableHead, TableRow, Link,
+  Table, TableBody, TableCell, TableHead, TableRow, TableContainer, Link,
   Accordion, AccordionSummary, AccordionDetails, Step, Stepper, StepLabel, StepContent, Box,
 } from '@mui/material';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
@@ -173,26 +173,28 @@ export default function ImportPage() {
               {lastResult && <Chip label={`Format: ${lastResult.format.toUpperCase()}`} />}
               {lastResult?.hasBilledCost && <Chip color="success" label="Includes billed cost" />}
             </Stack>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Records</TableCell>
-                  <TableCell>Total consumption</TableCell>
-                  <TableCell>Date range</TableCell>
-                  <TableCell>Avg daily</TableCell>
-                  <TableCell>Avg monthly</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                <TableRow>
-                  <TableCell>{formatNumber(summary.recordCount)}</TableCell>
-                  <TableCell>{formatKWh(summary.totalConsumption)}</TableCell>
-                  <TableCell>{summary.startDate} → {summary.endDate}</TableCell>
-                  <TableCell>{formatKWh(summary.averageDailyConsumption, 1)}</TableCell>
-                  <TableCell>{formatKWh(summary.averageMonthlyConsumption)}</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+            <TableContainer sx={{ overflowX: 'auto' }}>
+              <Table size="small" sx={{ minWidth: 440 }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Records</TableCell>
+                    <TableCell>Total consumption</TableCell>
+                    <TableCell>Date range</TableCell>
+                    <TableCell>Avg daily</TableCell>
+                    <TableCell>Avg monthly</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  <TableRow>
+                    <TableCell>{formatNumber(summary.recordCount)}</TableCell>
+                    <TableCell>{formatKWh(summary.totalConsumption)}</TableCell>
+                    <TableCell>{summary.startDate} → {summary.endDate}</TableCell>
+                    <TableCell>{formatKWh(summary.averageDailyConsumption, 1)}</TableCell>
+                    <TableCell>{formatKWh(summary.averageMonthlyConsumption)}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </TableContainer>
           </CardContent>
         </Card>
       )}
