@@ -1,8 +1,15 @@
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import autoTableDefault from 'jspdf-autotable';
 import type { ComparisonResult } from '../pricing';
 import { formatNIS, formatKWh, formatPercent } from './format';
+
+// jspdf-autotable ships CJS; depending on the bundler the default import may be
+// either the function itself or `{ default: fn }`. Normalise so it's callable
+// in every environment (Vite browser build, tsx/node, etc.).
+const autoTable = (
+  (autoTableDefault as unknown as { default?: unknown }).default ?? autoTableDefault
+) as (doc: jsPDF, options: Record<string, unknown>) => void;
 
 /** Export the comparison table to an .xlsx file. */
 export function exportComparisonExcel(result: ComparisonResult): void {
@@ -28,14 +35,14 @@ export function exportComparisonExcel(result: ComparisonResult): void {
   ]);
   XLSX.utils.book_append_sheet(wb, meta, 'Summary');
 
-  XLSX.writeFile(wb, 'iec-tariff-comparison.xlsx');
+  XLSX.writeFile(wb, 'powerplan-comparison.xlsx');
 }
 
 /** Export the comparison table to a PDF report. */
 export function exportComparisonPdf(result: ComparisonResult): void {
   const doc = new jsPDF();
   doc.setFontSize(16);
-  doc.text('IEC Tariff Comparison', 14, 18);
+  doc.text('PowerPlan — Tariff Comparison', 14, 18);
   doc.setFontSize(10);
   doc.text(
     `Base price: ${formatNIS(result.basePrice, 4)}/kWh   •   Total: ${formatKWh(
@@ -69,7 +76,7 @@ export function exportComparisonPdf(result: ComparisonResult): void {
     headStyles: { fillColor: [25, 118, 210] },
   });
 
-  doc.save('iec-tariff-comparison.pdf');
+  doc.save('powerplan-comparison.pdf');
 }
 
 function round2(n: number): number {
