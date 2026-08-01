@@ -1,6 +1,7 @@
 import { Box, Tooltip, Typography, useTheme } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import type { HeatCell } from '../utils/analytics';
-import { WEEKDAY_LABELS } from '../utils/analytics';
+import { WEEKDAY_KEYS } from '../utils/analytics';
 
 interface Props {
   cells: HeatCell[];
@@ -12,9 +13,11 @@ interface Props {
  * responsive. Colour intensity encodes total kWh in that weekday/hour cell.
  */
 export default function HourWeekdayHeatmap({ cells }: Props) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const max = Math.max(...cells.map((c) => c.value), 0.0001);
   const base = theme.palette.primary.main;
+  const dayLabel = (d: number) => t(`charts.weekday.${WEEKDAY_KEYS[d]}`);
 
   // Only render weekdays that appear in the data (respects weekday/weekend filter).
   const weekdays = Array.from(new Set(cells.map((c) => c.weekday))).sort((a, b) => a - b);
@@ -23,7 +26,7 @@ export default function HourWeekdayHeatmap({ cells }: Props) {
   for (const c of cells) grid.get(c.weekday)![c.hour] = c;
 
   return (
-    <Box sx={{ overflowX: 'auto' }}>
+    <Box dir="ltr" sx={{ overflowX: 'auto' }}>
       <Box sx={{ minWidth: 640 }}>
         {/* Hour header */}
         <Box sx={{ display: 'grid', gridTemplateColumns: `36px repeat(24, 1fr)`, gap: '2px', mb: '2px' }}>
@@ -39,14 +42,14 @@ export default function HourWeekdayHeatmap({ cells }: Props) {
           return (
           <Box key={d} sx={{ display: 'grid', gridTemplateColumns: `36px repeat(24, 1fr)`, gap: '2px', mb: '2px' }}>
             <Typography variant="caption" sx={{ fontSize: 10, color: 'text.secondary', alignSelf: 'center' }}>
-              {WEEKDAY_LABELS[d]}
+              {dayLabel(d)}
             </Typography>
             {row.map((cell, h) => {
               const intensity = cell ? cell.value / max : 0;
               return (
                 <Tooltip
                   key={h}
-                  title={`${WEEKDAY_LABELS[d]} ${String(h).padStart(2, '0')}:00 — ${(cell?.value ?? 0).toFixed(1)} kWh`}
+                  title={t('charts.heatmapCell', { day: dayLabel(d), hour: `${String(h).padStart(2, '0')}:00`, value: (cell?.value ?? 0).toFixed(1) })}
                   arrow
                 >
                   <Box

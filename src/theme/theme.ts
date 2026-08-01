@@ -1,8 +1,9 @@
 import { createTheme, type Theme } from '@mui/material/styles';
 
 /** Build a light or dark MUI theme with a consistent energy-analytics palette. */
-export function buildTheme(mode: 'light' | 'dark'): Theme {
+export function buildTheme(mode: 'light' | 'dark', direction: 'ltr' | 'rtl' = 'ltr'): Theme {
   return createTheme({
+    direction,
     palette: {
       mode,
       primary: { main: '#1976d2' },

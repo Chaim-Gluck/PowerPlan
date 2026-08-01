@@ -6,6 +6,7 @@ import {
 import GridOnIcon from '@mui/icons-material/GridOn';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import TuneIcon from '@mui/icons-material/Tune';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../state/AppContext';
 import FiltersBar from '../components/FiltersBar';
 import ChartCard from '../components/ChartCard';
@@ -17,8 +18,10 @@ import { exportComparisonExcel, exportComparisonPdf } from '../utils/exporters';
 import { formatNIS, formatKWh, formatPercent } from '../utils/format';
 
 const gridCharts = { display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } };
+const hh = (h: number) => `${String(h).padStart(2, '0')}:00`;
 
 export default function ComparisonPage() {
+  const { t } = useTranslation();
   const { records, comparison, plans, activePlans, basePrice, timeBoundaries } = useApp();
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
 
@@ -33,28 +36,28 @@ export default function ComparisonPage() {
     return BillCalculator.compareAll(shifted, activePlans, basePrice);
   }, [records, activePlans, basePrice, fromBucket, toBucket, shiftPct, timeBoundaries]);
 
-  const bucketLabels = {
-    day: `Day (${hh(timeBoundaries.dayStart)}–${hh(timeBoundaries.eveningStart)})`,
-    evening: `Evening (${hh(timeBoundaries.eveningStart)}–${hh(timeBoundaries.nightStart)})`,
-    night: `Night (${hh(timeBoundaries.nightStart)}–${hh(timeBoundaries.dayStart)})`,
+  const bucketLabels: Record<Bucket, string> = {
+    day: t('charts.bucket.day', { start: hh(timeBoundaries.dayStart), end: hh(timeBoundaries.eveningStart) }),
+    evening: t('charts.bucket.evening', { start: hh(timeBoundaries.eveningStart), end: hh(timeBoundaries.nightStart) }),
+    night: t('charts.bucket.night', { start: hh(timeBoundaries.nightStart), end: hh(timeBoundaries.dayStart) }),
   };
 
   if (!comparison || records.length === 0) {
-    return <Alert severity="info">Import data and define plans to see the comparison.</Alert>;
+    return <Alert severity="info">{t('comparison.needData')}</Alert>;
   }
 
   const selected = comparison.comparisons.find((c) => c.planId === selectedPlanId) ?? comparison.comparisons[0];
   const bundleIds = new Set(plans.filter((p) => p.bundleOnly).map((p) => p.id));
-  // Secondary columns hidden on phones so the key ones (Plan, Total, Savings %) fit without scrolling.
   const hideSm = { display: { xs: 'none', md: 'table-cell' } } as const;
+  const ruleLabel = (label: string) => (label === 'No discount' ? t('comparison.breakdown.noDiscount') : label);
 
   return (
     <Stack spacing={3}>
       <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={2}>
-        <Typography variant="h4">Plan comparison</Typography>
+        <Typography variant="h4">{t('comparison.title')}</Typography>
         <Stack direction="row" spacing={1}>
-          <Button variant="outlined" startIcon={<GridOnIcon />} onClick={() => exportComparisonExcel(comparison)}>Excel</Button>
-          <Button variant="outlined" startIcon={<PictureAsPdfIcon />} onClick={() => exportComparisonPdf(comparison)}>PDF</Button>
+          <Button variant="outlined" startIcon={<GridOnIcon />} onClick={() => exportComparisonExcel(comparison)}>{t('comparison.excel')}</Button>
+          <Button variant="outlined" startIcon={<PictureAsPdfIcon />} onClick={() => exportComparisonPdf(comparison)}>{t('comparison.pdf')}</Button>
         </Stack>
       </Stack>
 
@@ -65,22 +68,22 @@ export default function ComparisonPage() {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>#</TableCell>
-              <TableCell>Plan</TableCell>
-              <TableCell align="right">Total cost</TableCell>
-              <TableCell align="right" sx={hideSm}>Savings vs base</TableCell>
-              <TableCell align="right">Savings %</TableCell>
-              <TableCell align="right" sx={hideSm}>Avg monthly</TableCell>
-              <TableCell align="right" sx={hideSm}>Est. yearly</TableCell>
+              <TableCell>{t('comparison.table.rank')}</TableCell>
+              <TableCell>{t('comparison.table.plan')}</TableCell>
+              <TableCell align="right">{t('comparison.table.totalCost')}</TableCell>
+              <TableCell align="right" sx={hideSm}>{t('comparison.table.savingsVsBase')}</TableCell>
+              <TableCell align="right">{t('comparison.table.savingsPercent')}</TableCell>
+              <TableCell align="right" sx={hideSm}>{t('comparison.table.avgMonthly')}</TableCell>
+              <TableCell align="right" sx={hideSm}>{t('comparison.table.estYearly')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             <TableRow sx={{ bgcolor: 'action.hover' }}>
-              <TableCell>—</TableCell>
-              <TableCell><b>IEC — full tariff</b> (stay with the default supplier, no discount)</TableCell>
+              <TableCell>{t('common.dash')}</TableCell>
+              <TableCell><b>{t('comparison.table.iecBaseline')}</b>{t('comparison.table.iecBaselineSub')}</TableCell>
               <TableCell align="right">{formatNIS(comparison.baseCost)}</TableCell>
-              <TableCell align="right" sx={hideSm}>—</TableCell>
-              <TableCell align="right">—</TableCell>
+              <TableCell align="right" sx={hideSm}>{t('common.dash')}</TableCell>
+              <TableCell align="right">{t('common.dash')}</TableCell>
               <TableCell align="right" sx={hideSm}>{formatNIS(comparison.baseCost / Math.max(comparison.monthCount, 1))}</TableCell>
               <TableCell align="right" sx={hideSm}>{formatNIS((comparison.baseCost / Math.max(comparison.monthCount, 1)) * 12)}</TableCell>
             </TableRow>
@@ -104,8 +107,8 @@ export default function ComparisonPage() {
                       )}
                       {(c.isCheapest || bundleIds.has(c.planId)) && (
                         <Stack direction="row" spacing={0.5} sx={{ mt: 0.5, flexWrap: 'wrap', gap: 0.5 }}>
-                          {c.isCheapest && <Chip size="small" color="success" label="Cheapest" />}
-                          {bundleIds.has(c.planId) && <Chip size="small" color="warning" variant="outlined" label="Bundle" />}
+                          {c.isCheapest && <Chip size="small" color="success" label={t('comparison.table.cheapest')} />}
+                          {bundleIds.has(c.planId) && <Chip size="small" color="warning" variant="outlined" label={t('comparison.table.bundle')} />}
                         </Stack>
                       )}
                     </Box>
@@ -124,20 +127,20 @@ export default function ComparisonPage() {
 
       {/* Monthly charts */}
       <Box sx={gridCharts}>
-        <ChartCard title="Monthly bill comparison" subtitle="Cost per month under each plan">
+        <ChartCard title={t('comparison.charts.monthlyBill')} subtitle={t('comparison.charts.monthlyBillSub')}>
           <MonthlyPlanChart comparison={comparison} metric="cost" />
         </ChartCard>
-        <ChartCard title="Monthly savings vs base" subtitle="₪ saved each month">
+        <ChartCard title={t('comparison.charts.monthlySavings')} subtitle={t('comparison.charts.monthlySavingsSub')}>
           <MonthlyPlanChart comparison={comparison} metric="savings" />
         </ChartCard>
       </Box>
 
       {/* Per-plan breakdown */}
       <ChartCard
-        title="Where the bill comes from"
-        subtitle="Cost split by pricing rule"
+        title={t('comparison.breakdown.title')}
+        subtitle={t('comparison.breakdown.sub')}
         action={
-          <TextField select size="small" label="Plan" value={selected.planId}
+          <TextField select size="small" label={t('comparison.breakdown.plan')} value={selected.planId}
             onChange={(e) => setSelectedPlanId(e.target.value)} sx={{ minWidth: 200 }}>
             {comparison.comparisons.map((c) => (
               <MenuItem key={c.planId} value={c.planId}>{c.planName}</MenuItem>
@@ -147,23 +150,23 @@ export default function ComparisonPage() {
       >
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
           <DistributionPieChart
-            data={selected.appliedRules.map((r) => ({ name: r.label, value: r.cost }))}
+            data={selected.appliedRules.map((r) => ({ name: ruleLabel(r.label), value: r.cost }))}
             unit="₪"
           />
           <TableContainer>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Rule</TableCell>
-                  <TableCell align="right">Discount</TableCell>
-                  <TableCell align="right">kWh</TableCell>
-                  <TableCell align="right">Cost</TableCell>
+                  <TableCell>{t('comparison.breakdown.rule')}</TableCell>
+                  <TableCell align="right">{t('comparison.breakdown.discount')}</TableCell>
+                  <TableCell align="right">{t('comparison.breakdown.kwh')}</TableCell>
+                  <TableCell align="right">{t('comparison.breakdown.cost')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {selected.appliedRules.map((r) => (
                   <TableRow key={r.ruleId}>
-                    <TableCell>{r.label}</TableCell>
+                    <TableCell>{ruleLabel(r.label)}</TableCell>
                     <TableCell align="right">{r.discountPercent}%</TableCell>
                     <TableCell align="right">{formatKWh(r.consumption)}</TableCell>
                     <TableCell align="right">{formatNIS(r.cost)}</TableCell>
@@ -180,45 +183,45 @@ export default function ComparisonPage() {
         <CardContent>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
             <TuneIcon color="primary" />
-            <Typography variant="h6">What-if simulator</Typography>
+            <Typography variant="h6">{t('comparison.whatIf.title')}</Typography>
           </Stack>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Shift part of your consumption between times of day and see how the optimal plan changes.
+            {t('comparison.whatIf.intro')}
           </Typography>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
-            <TextField select size="small" label="Shift from" value={fromBucket} onChange={(e) => setFromBucket(e.target.value as Bucket)}>
+            <TextField select size="small" label={t('comparison.whatIf.shiftFrom')} value={fromBucket} onChange={(e) => setFromBucket(e.target.value as Bucket)}>
               <MenuItem value="day">{bucketLabels.day}</MenuItem>
               <MenuItem value="evening">{bucketLabels.evening}</MenuItem>
               <MenuItem value="night">{bucketLabels.night}</MenuItem>
             </TextField>
-            <TextField select size="small" label="To" value={toBucket} onChange={(e) => setToBucket(e.target.value as Bucket)}>
+            <TextField select size="small" label={t('comparison.whatIf.to')} value={toBucket} onChange={(e) => setToBucket(e.target.value as Bucket)}>
               <MenuItem value="day">{bucketLabels.day}</MenuItem>
               <MenuItem value="evening">{bucketLabels.evening}</MenuItem>
               <MenuItem value="night">{bucketLabels.night}</MenuItem>
             </TextField>
             <Box sx={{ minWidth: 220, px: 2 }}>
-              <Typography variant="caption">Shift {shiftPct}%</Typography>
+              <Typography variant="caption">{t('comparison.whatIf.shiftAmount', { percent: shiftPct })}</Typography>
               <Slider value={shiftPct} onChange={(_, v) => setShiftPct(v as number)} min={0} max={100} step={5} valueLabelDisplay="auto" />
             </Box>
           </Stack>
 
           {whatIf?.cheapest && (
             <Alert severity="success" sx={{ mt: 2 }}>
-              After shifting {shiftPct}% of {fromBucket} usage to {toBucket}, the best plan would be{' '}
-              <b>{whatIf.cheapest.planName}</b> at {formatNIS(whatIf.cheapest.totalCost)} (
-              {formatPercent(whatIf.cheapest.savingsPercent)} saved).
+              {t('comparison.whatIf.result', {
+                percent: shiftPct,
+                from: bucketLabels[fromBucket],
+                to: bucketLabels[toBucket],
+                plan: whatIf.cheapest.planName,
+                cost: formatNIS(whatIf.cheapest.totalCost),
+                savings: formatPercent(whatIf.cheapest.savingsPercent),
+              })}
               {comparison.cheapest && whatIf.cheapest.planId !== comparison.cheapest.planId
-                ? ` That's a change from your current best, ${comparison.cheapest.planName}.`
-                : ' (Same plan as today.)'}
+                ? t('comparison.whatIf.changed', { plan: comparison.cheapest.planName })
+                : t('comparison.whatIf.same')}
             </Alert>
           )}
         </CardContent>
       </Card>
     </Stack>
   );
-}
-
-/** `HH:00` label for an hour. */
-function hh(h: number): string {
-  return `${String(h).padStart(2, '0')}:00`;
 }

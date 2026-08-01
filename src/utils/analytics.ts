@@ -134,6 +134,8 @@ export function weeklyConsumption(records: EnrichedRecord[]): NamedValue[] {
 }
 
 const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+/** Stable weekday keys (index 0 = Sunday) for i18n lookups. */
+export const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 
 /** Average consumption per hour of day (0–23). */
 export function consumptionByHour(records: EnrichedRecord[]): NamedValue[] {
@@ -149,10 +151,12 @@ export function consumptionByHour(records: EnrichedRecord[]): NamedValue[] {
   }));
 }
 
-/** Total consumption per weekday. Only days present in the data are returned,
- *  so applying a weekday/weekend filter shows just the relevant days instead of
- *  misleading empty bars. */
-export function consumptionByWeekday(records: EnrichedRecord[]): NamedValue[] {
+/** Total consumption per weekday. Only days present in the data are returned.
+ *  `weekdayLabel(index)` lets the UI supply localised names. */
+export function consumptionByWeekday(
+  records: EnrichedRecord[],
+  weekdayLabel: (index: number) => string = (i) => WEEKDAY_NAMES[i],
+): NamedValue[] {
   const totals = new Array(7).fill(0);
   const present = new Array(7).fill(false);
   for (const r of records) {
@@ -160,9 +164,9 @@ export function consumptionByWeekday(records: EnrichedRecord[]): NamedValue[] {
     present[r.weekday] = true;
   }
   return totals
-    .map((value, i) => ({ name: WEEKDAY_NAMES[i], value, i }))
+    .map((value, i) => ({ value, i }))
     .filter((e) => present[e.i])
-    .map(({ name, value }) => ({ name, value }));
+    .map(({ value, i }) => ({ name: weekdayLabel(i), value }));
 }
 
 /** Heatmap cell: weekday × hour average. */
@@ -194,8 +198,17 @@ export function hourWeekdayHeatmap(records: EnrichedRecord[]): HeatCell[] {
 
 export const WEEKDAY_LABELS = WEEKDAY_NAMES;
 
+/** Labels for the weekday/weekend split (overridable for i18n). */
+export interface SplitLabels {
+  weekdays: string;
+  weekend: string;
+}
+
 /** Weekday vs weekend split. */
-export function weekdayWeekendSplit(records: EnrichedRecord[]): NamedValue[] {
+export function weekdayWeekendSplit(
+  records: EnrichedRecord[],
+  labels: SplitLabels = { weekdays: 'Weekdays', weekend: 'Weekend' },
+): NamedValue[] {
   let weekday = 0;
   let weekend = 0;
   for (const r of records) {
@@ -203,35 +216,51 @@ export function weekdayWeekendSplit(records: EnrichedRecord[]): NamedValue[] {
     else weekday += r.consumption;
   }
   return [
-    { name: 'Weekdays', value: weekday },
-    { name: 'Weekend', value: weekend },
+    { name: labels.weekdays, value: weekday },
+    { name: labels.weekend, value: weekend },
   ];
 }
+
+/** Builds a label for a time-of-day bucket given its start/end hour labels. */
+export type BucketLabeler = (bucket: 'day' | 'evening' | 'night', start: string, end: string) => string;
+
+const defaultBucketLabeler: BucketLabeler = (bucket, start, end) => {
+  const name = bucket === 'day' ? 'Day' : bucket === 'evening' ? 'Evening' : 'Night';
+  return `${name} (${start}–${end})`;
+};
 
 /** Day / evening / night split using the configured boundaries. */
 export function timeOfDaySplit(
   records: EnrichedRecord[],
   boundaries: TimeBoundaries = DEFAULT_TIME_BOUNDARIES,
+  label: BucketLabeler = defaultBucketLabeler,
 ): NamedValue[] {
   const buckets = { day: 0, evening: 0, night: 0 };
   for (const r of records) buckets[timeBucket(r.hour, boundaries)] += r.consumption;
   const { dayStart, eveningStart, nightStart } = boundaries;
   return [
-    { name: `Day (${hourLabel(dayStart)}–${hourLabel(eveningStart)})`, value: buckets.day },
-    { name: `Evening (${hourLabel(eveningStart)}–${hourLabel(nightStart)})`, value: buckets.evening },
-    { name: `Night (${hourLabel(nightStart)}–${hourLabel(dayStart)})`, value: buckets.night },
+    { name: label('day', hourLabel(dayStart), hourLabel(eveningStart)), value: buckets.day },
+    { name: label('evening', hourLabel(eveningStart), hourLabel(nightStart)), value: buckets.evening },
+    { name: label('night', hourLabel(nightStart), hourLabel(dayStart)), value: buckets.night },
   ];
 }
 
+/** A translatable insight: an i18n key + interpolation params. */
+export interface Insight {
+  key: string;
+  params?: Record<string, string | number>;
+}
+
 /**
- * Generate natural-language insights from the data and the plan comparison.
+ * Generate insights (as i18n key + params) from the data and plan comparison.
+ * Kept UI-agnostic: the React layer translates the returned keys.
  */
 export function generateInsights(
   records: EnrichedRecord[],
   comparison: ComparisonResult | null,
   boundaries: TimeBoundaries = DEFAULT_TIME_BOUNDARIES,
-): string[] {
-  const insights: string[] = [];
+): Insight[] {
+  const insights: Insight[] = [];
   if (records.length === 0) return insights;
 
   const total = records.reduce((s, r) => s + r.consumption, 0) || 1;
@@ -247,45 +276,45 @@ export function generateInsights(
     }
     tod[timeBucket(r.hour, boundaries)] += r.consumption;
   }
-  insights.push(
-    `You consume ${pct(weekdayEvening / total)} of your electricity during weekday evenings.`,
-  );
-  insights.push(
-    `Your usage splits into ${pct(tod.day / total)} daytime, ${pct(tod.evening / total)} evening and ${pct(tod.night / total)} night.`,
-  );
-  insights.push(`${pct(weekend / total)} of your consumption falls on weekends (Fri–Sat).`);
+  insights.push({ key: 'insights.weekdayEvening', params: { percent: pct(weekdayEvening / total) } });
+  insights.push({
+    key: 'insights.todSplit',
+    params: { day: pct(tod.day / total), evening: pct(tod.evening / total), night: pct(tod.night / total) },
+  });
+  insights.push({ key: 'insights.weekendShare', params: { percent: pct(weekend / total) } });
 
   if (comparison && comparison.comparisons.length > 0) {
     const cheapest = comparison.cheapest;
     if (cheapest) {
-      insights.push(
-        `Your best plan is “${cheapest.planName}”, saving ${nis(cheapest.savings)} (${pct(cheapest.savingsPercent / 100)}) over the imported period vs. the flat base price.`,
-      );
-    }
-    // Share of consumption that actually landed in a discounted window (cheapest plan).
-    if (cheapest) {
+      insights.push({
+        key: 'insights.bestPlan',
+        params: { plan: cheapest.planName, savings: nis(cheapest.savings), percent: pct(cheapest.savingsPercent / 100) },
+      });
       const discounted = cheapest.appliedRules
         .filter((r) => r.discountPercent > 0)
         .reduce((s, r) => s + r.consumption, 0);
-      insights.push(
-        `Under “${cheapest.planName}”, only ${pct(discounted / total)} of your usage occurs during discount hours.`,
-      );
+      insights.push({
+        key: 'insights.discountShare',
+        params: { plan: cheapest.planName, percent: pct(discounted / total) },
+      });
     }
-    // Call out weak plans.
     for (const c of comparison.comparisons) {
       if (c.savingsPercent > 0 && c.savingsPercent < 2) {
-        insights.push(
-          `The “${c.planName}” plan saves only ${pct(c.savingsPercent / 100)} because your usage barely overlaps its discount window.`,
-        );
+        insights.push({ key: 'insights.weakPlan', params: { plan: c.planName, percent: pct(c.savingsPercent / 100) } });
       }
     }
-    // Billed-cost validation.
     const withBilled = comparison.comparisons.find((c) => c.billedTotal != null);
     if (withBilled && withBilled.billedTotal) {
       const diff = withBilled.totalCost - withBilled.billedTotal;
-      insights.push(
-        `Engine check: computed ${nis(withBilled.totalCost)} vs. billed ${nis(withBilled.billedTotal)} (${nis(Math.abs(diff))} ${diff >= 0 ? 'over' : 'under'}).`,
-      );
+      insights.push({
+        key: 'insights.engineCheck',
+        params: {
+          computed: nis(withBilled.totalCost),
+          billed: nis(withBilled.billedTotal),
+          diff: nis(Math.abs(diff)),
+          direction: diff >= 0 ? 'over' : 'under',
+        },
+      });
     }
   }
 

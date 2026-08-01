@@ -38,6 +38,7 @@ export default function DistributionPieChart({ data, height = 260, colors = SERI
   };
 
   return (
+    <div dir="ltr">
     <ResponsiveContainer width="100%" height={height}>
       <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
         <Pie
@@ -61,5 +62,6 @@ export default function DistributionPieChart({ data, height = 260, colors = SERI
         <Legend />
       </PieChart>
     </ResponsiveContainer>
+    </div>
   );
 }

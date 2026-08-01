@@ -6,13 +6,14 @@ import {
 } from '@mui/material';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import AddIcon from '@mui/icons-material/Add';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   makeId, minutesToTime, timeToMinutes, timeInWindow, MINUTES_PER_DAY,
   type TariffPlan, type TariffRule,
 } from '../pricing';
+import { WEEKDAY_KEYS } from '../utils/analytics';
 import { SERIES_COLORS } from '../theme/theme';
-
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 interface Props {
   open: boolean;
@@ -23,6 +24,7 @@ interface Props {
 
 /** Modal editor for creating / editing a tariff plan and its rules. */
 export default function PlanEditorDialog({ open, plan, onClose, onSave }: Props) {
+  const { t } = useTranslation();
   const [draft, setDraft] = useState<TariffPlan>(() => cloneOrNew(plan));
 
   // Re-seed the draft whenever a different plan is opened.
@@ -33,7 +35,7 @@ export default function PlanEditorDialog({ open, plan, onClose, onSave }: Props)
     setLastSeed(seedKey);
   }
 
-  const warnings = useMemo(() => validatePlan(draft), [draft]);
+  const warnings = useMemo(() => validatePlan(draft, t), [draft, t]);
   const hasErrors = warnings.some((w) => w.severity === 'error');
 
   const updateRule = (id: string, patch: Partial<TariffRule>) => {
@@ -52,28 +54,28 @@ export default function PlanEditorDialog({ open, plan, onClose, onSave }: Props)
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>{plan ? 'Edit plan' : 'New plan'}</DialogTitle>
+      <DialogTitle>{plan ? t('editor.editTitle') : t('editor.newTitle')}</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <TextField
-              label="Plan name"
+              label={t('editor.name')}
               value={draft.name}
-              onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+              onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value, nameKey: undefined }))}
               fullWidth
               error={!draft.name.trim()}
-              helperText={!draft.name.trim() ? 'Name is required' : ' '}
+              helperText={!draft.name.trim() ? t('editor.nameRequired') : ' '}
             />
             <TextField
-              label="Supplier"
+              label={t('editor.supplier')}
               value={draft.supplier ?? ''}
-              onChange={(e) => setDraft((d) => ({ ...d, supplier: e.target.value }))}
+              onChange={(e) => setDraft((d) => ({ ...d, supplier: e.target.value, supplierKey: undefined }))}
               fullWidth
-              placeholder="e.g. Electra Power"
+              placeholder={t('editor.supplierPlaceholder')}
               helperText=" "
             />
             <TextField
-              select label="Color" value={draft.color ?? SERIES_COLORS[0]}
+              select label={t('editor.color')} value={draft.color ?? SERIES_COLORS[0]}
               onChange={(e) => setDraft((d) => ({ ...d, color: e.target.value }))}
               sx={{ minWidth: 140 }}
             >
@@ -87,9 +89,9 @@ export default function PlanEditorDialog({ open, plan, onClose, onSave }: Props)
             </TextField>
           </Stack>
           <TextField
-            label="Description (optional)"
+            label={t('editor.description')}
             value={draft.description ?? ''}
-            onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
+            onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value, descriptionKey: undefined }))}
             fullWidth multiline minRows={1}
           />
           <FormControlLabel
@@ -99,11 +101,11 @@ export default function PlanEditorDialog({ open, plan, onClose, onSave }: Props)
                 onChange={(e) => setDraft((d) => ({ ...d, bundleOnly: e.target.checked }))}
               />
             }
-            label="Only available as a bundle (e.g. requires a gas subscription)"
+            label={t('editor.bundleOnly')}
           />
 
           <Divider textAlign="left">
-            <Typography variant="overline">Pricing rules</Typography>
+            <Typography variant="overline">{t('editor.rules')}</Typography>
           </Divider>
 
           {warnings.map((w, i) => (
@@ -115,7 +117,7 @@ export default function PlanEditorDialog({ open, plan, onClose, onSave }: Props)
               <Stack spacing={1.5}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <TextField
-                    label="Rule label (optional)" size="small" variant="standard"
+                    label={t('editor.ruleLabel')} size="small" variant="standard"
                     value={rule.label ?? ''}
                     onChange={(e) => updateRule(rule.id, { label: e.target.value })}
                     sx={{ flexGrow: 1, mr: 2 }}
@@ -130,30 +132,30 @@ export default function PlanEditorDialog({ open, plan, onClose, onSave }: Props)
                   onChange={(_, days: number[]) => updateRule(rule.id, { daysOfWeek: days })}
                   aria-label="days of week"
                 >
-                  {DAY_LABELS.map((label, i) => (
-                    <ToggleButton key={i} value={i}>{label}</ToggleButton>
+                  {WEEKDAY_KEYS.map((key, i) => (
+                    <ToggleButton key={i} value={i}>{t(`charts.weekday.${key}`)}</ToggleButton>
                   ))}
                 </ToggleButtonGroup>
 
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                   <TextField
-                    label="Start" type="time" size="small"
+                    label={t('editor.start')} type="time" size="small"
                     value={minutesToTime(rule.startMinutes === MINUTES_PER_DAY ? 0 : rule.startMinutes)}
                     onChange={(e) => updateRule(rule.id, { startMinutes: timeToMinutes(e.target.value) })}
                     InputLabelProps={{ shrink: true }} inputProps={{ step: 900 }}
                   />
                   <TextField
-                    label="End" type="time" size="small"
+                    label={t('editor.end')} type="time" size="small"
                     value={minutesToTime(rule.endMinutes >= MINUTES_PER_DAY ? 0 : rule.endMinutes)}
                     onChange={(e) => {
                       const v = timeToMinutes(e.target.value);
                       updateRule(rule.id, { endMinutes: v === 0 ? MINUTES_PER_DAY : v });
                     }}
                     InputLabelProps={{ shrink: true }} inputProps={{ step: 900 }}
-                    helperText="00:00 as end = midnight (24:00)"
+                    helperText={t('editor.endHelp')}
                   />
                   <TextField
-                    label="Discount %" type="number" size="small"
+                    label={t('editor.discount')} type="number" size="small"
                     value={rule.discountPercent}
                     onChange={(e) => updateRule(rule.id, { discountPercent: Number(e.target.value) })}
                     error={rule.discountPercent < 0 || rule.discountPercent > 100}
@@ -162,7 +164,7 @@ export default function PlanEditorDialog({ open, plan, onClose, onSave }: Props)
                 </Stack>
                 <Typography variant="caption" color="text.secondary">
                   {rule.endMinutes <= rule.startMinutes && rule.endMinutes !== MINUTES_PER_DAY
-                    ? 'Overnight window (wraps past midnight).'
+                    ? t('editor.overnight')
                     : ' '}
                 </Typography>
               </Stack>
@@ -170,18 +172,18 @@ export default function PlanEditorDialog({ open, plan, onClose, onSave }: Props)
           ))}
 
           <Button startIcon={<AddIcon />} onClick={addRule} variant="outlined">
-            Add rule
+            {t('editor.addRule')}
           </Button>
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t('editor.cancel')}</Button>
         <Button
           variant="contained"
           disabled={hasErrors || !draft.name.trim()}
           onClick={() => onSave(draft)}
         >
-          Save plan
+          {t('editor.savePlan')}
         </Button>
       </DialogActions>
     </Dialog>
@@ -207,17 +209,17 @@ interface Warning {
 }
 
 /** Validate discounts and detect ambiguous / overlapping rules. */
-function validatePlan(plan: TariffPlan): Warning[] {
+function validatePlan(plan: TariffPlan, t: TFunction): Warning[] {
   const out: Warning[] = [];
   if (plan.rules.length === 0) {
-    out.push({ severity: 'warning', message: 'This plan has no rules — every interval will be charged at the full base price.' });
+    out.push({ severity: 'warning', message: t('editor.warnNoRules') });
   }
   for (const r of plan.rules) {
     if (r.discountPercent < 0 || r.discountPercent > 100) {
-      out.push({ severity: 'error', message: `A rule has an invalid discount (${r.discountPercent}%). Must be between 0 and 100.` });
+      out.push({ severity: 'error', message: t('editor.warnInvalidDiscount', { percent: r.discountPercent }) });
     }
     if (r.daysOfWeek.length === 0) {
-      out.push({ severity: 'warning', message: 'A rule has no days selected and will never apply. Select at least one day.' });
+      out.push({ severity: 'warning', message: t('editor.warnNoDays') });
     }
   }
   // Overlap detection: same day + overlapping time window with different discount.
@@ -229,7 +231,10 @@ function validatePlan(plan: TariffPlan): Warning[] {
       if (sharedDay && windowsOverlap(a, b) && a.discountPercent !== b.discountPercent) {
         out.push({
           severity: 'warning',
-          message: `Rules "${a.label || 'rule ' + (i + 1)}" and "${b.label || 'rule ' + (j + 1)}" overlap in time — the more specific (narrower) rule will win.`,
+          message: t('editor.warnOverlap', {
+            a: a.label || t('editor.ruleN', { n: i + 1 }),
+            b: b.label || t('editor.ruleN', { n: j + 1 }),
+          }),
         });
       }
     }

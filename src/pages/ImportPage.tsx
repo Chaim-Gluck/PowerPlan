@@ -10,22 +10,15 @@ import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../state/AppContext';
 import { importFile, importCsvText, type ImportResult } from '../utils/dataImport';
 import { formatKWh, formatNumber } from '../utils/format';
 
 const IEC_URL = 'https://www.iec.co.il/consumption-info-menu/remote-reading-info';
 
-const GUIDE_STEPS: { label: string; detail: string }[] = [
-  { label: 'Open the IEC “Remote Reading Info” page', detail: 'Use the button above. It opens on the official IEC site in a new tab so you can log in securely — this app never sees your IEC credentials.' },
-  { label: 'Log in with your IEC account', detail: 'Sign in (ID number / customer number + the code sent to your phone). If you have more than one meter, pick the electricity consumption meter.' },
-  { label: 'Request the consumption report (“דוח צריכה”)', detail: 'Choose the widest date range available (up to ~2 years of 15-minute data) and request the report. IEC either lets you download it directly or emails it to you as a CSV.' },
-  { label: 'Save the CSV file', detail: 'Download it (or save the emailed attachment). It looks like meter_LP_…gmail.com.csv — the same format this app expects.' },
-  { label: 'Drag it into this app', detail: 'Drop the CSV (or Excel) onto the box above, or use “Choose file”. Everything is parsed locally in your browser — nothing is uploaded anywhere.' },
-];
-
-
 export default function ImportPage() {
+  const { t } = useTranslation();
   const { setData, clearData, summary, fileName, intervalMinutes, rawRecords } = useApp();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,16 +26,21 @@ export default function ImportPage() {
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const guideSteps = [1, 2, 3, 4, 5].map((n) => ({
+    label: t(`import.guide.step${n}Label`),
+    detail: t(`import.guide.step${n}Detail`),
+  }));
+
   const handleFile = async (file: File) => {
     setBusy(true);
     setError(null);
     try {
       const result = await importFile(file);
-      if (result.records.length === 0) throw new Error('No records found in the file.');
+      if (result.records.length === 0) { setError(t('import.noRecords')); return; }
       setData(result.records, result.intervalMinutes, file.name);
       setLastResult(result);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to import file.');
+    } catch {
+      setError(t('import.importFailed'));
     } finally {
       setBusy(false);
     }
@@ -57,22 +55,22 @@ export default function ImportPage() {
       const result = importCsvText(text);
       setData(result.records, result.intervalMinutes, 'sample-data.csv');
       setLastResult(result);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load sample.');
+    } catch {
+      setError(t('import.sampleFailed'));
     } finally {
       setBusy(false);
     }
   };
 
   const intervalLabel =
-    intervalMinutes === 15 ? 'Quarter-hour (15 min)'
-      : intervalMinutes === 30 ? 'Half-hour (30 min)'
-      : intervalMinutes === 60 ? 'Hourly (60 min)'
-      : `${intervalMinutes} min`;
+    intervalMinutes === 15 ? t('import.interval.quarter')
+      : intervalMinutes === 30 ? t('import.interval.half')
+      : intervalMinutes === 60 ? t('import.interval.hourly')
+      : t('import.interval.other', { minutes: intervalMinutes });
 
   return (
     <Stack spacing={3}>
-      <Typography variant="h4">Import electricity data</Typography>
+      <Typography variant="h4">{t('import.title')}</Typography>
 
       <Card
         elevation={0}
@@ -92,10 +90,9 @@ export default function ImportPage() {
       >
         <CardContent sx={{ textAlign: 'center', py: 6 }}>
           <UploadFileIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
-          <Typography variant="h6">Drop your CSV or Excel file here</Typography>
+          <Typography variant="h6">{t('import.dropTitle')}</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Supports the IEC meter export (meter_LP_…csv) and generic Timestamp + Consumption files.
-            Hourly, half-hour and quarter-hour intervals are detected automatically.
+            {t('import.dropSub')}
           </Typography>
           <input
             ref={inputRef} type="file" accept=".csv,.xlsx,.xls" hidden
@@ -103,10 +100,10 @@ export default function ImportPage() {
           />
           <Stack direction="row" spacing={2} justifyContent="center" sx={{ mt: 1 }}>
             <Button variant="contained" startIcon={<UploadFileIcon />} onClick={() => inputRef.current?.click()}>
-              Choose file
+              {t('import.chooseFile')}
             </Button>
             <Button variant="outlined" startIcon={<ScienceIcon />} onClick={loadSample}>
-              Load sample data
+              {t('import.loadSample')}
             </Button>
           </Stack>
         </CardContent>
@@ -121,26 +118,22 @@ export default function ImportPage() {
 
       <Alert severity="info" icon={<HelpOutlineIcon />}>
         <Stack spacing={1.5}>
-          <Typography variant="body2">
-            Don’t have the file yet? Download your own 2-year meter report from IEC. It’s a quick, secure,
-            self-service flow — this app can’t log in for you (it has no server and never handles your IEC
-            credentials), but here’s exactly how to get it:
-          </Typography>
+          <Typography variant="body2">{t('import.guide.intro')}</Typography>
           <Box>
             <Button
               variant="contained" size="small" startIcon={<OpenInNewIcon />}
               onClick={() => window.open(IEC_URL, '_blank', 'noopener,noreferrer')}
             >
-              Open IEC portal
+              {t('import.guide.openPortal')}
             </Button>
           </Box>
           <Accordion elevation={0} disableGutters sx={{ bgcolor: 'transparent', '&:before': { display: 'none' } }}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0, minHeight: 0 }}>
-              <Typography variant="body2" fontWeight={600}>Step-by-step guide</Typography>
+              <Typography variant="body2" fontWeight={600}>{t('import.guide.steps')}</Typography>
             </AccordionSummary>
             <AccordionDetails sx={{ px: 0 }}>
               <Stepper orientation="vertical" nonLinear>
-                {GUIDE_STEPS.map((s, i) => (
+                {guideSteps.map((s, i) => (
                   <Step key={i} active expanded>
                     <StepLabel>{s.label}</StepLabel>
                     <StepContent>
@@ -150,7 +143,7 @@ export default function ImportPage() {
                 ))}
               </Stepper>
               <Typography variant="caption" color="text.secondary">
-                Direct link:{' '}
+                {t('import.guide.directLink')}{' '}
                 <Link href={IEC_URL} target="_blank" rel="noopener">{IEC_URL}</Link>
               </Typography>
             </AccordionDetails>
@@ -162,26 +155,26 @@ export default function ImportPage() {
         <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
           <CardContent>
             <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-              <Typography variant="h6">Imported dataset</Typography>
+              <Typography variant="h6">{t('import.dataset.title')}</Typography>
               <Button color="error" startIcon={<DeleteSweepIcon />} onClick={clearData}>
-                Clear data
+                {t('import.dataset.clear')}
               </Button>
             </Stack>
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 2 }}>
-              <Chip label={fileName ?? 'dataset'} color="primary" variant="outlined" />
+              <Chip label={fileName ?? t('import.dataset.dataset')} color="primary" variant="outlined" />
               <Chip label={intervalLabel} />
-              {lastResult && <Chip label={`Format: ${lastResult.format.toUpperCase()}`} />}
-              {lastResult?.hasBilledCost && <Chip color="success" label="Includes billed cost" />}
+              {lastResult && <Chip label={t('import.dataset.format', { format: lastResult.format.toUpperCase() })} />}
+              {lastResult?.hasBilledCost && <Chip color="success" label={t('import.dataset.includesBilled')} />}
             </Stack>
             <TableContainer sx={{ overflowX: 'auto' }}>
               <Table size="small" sx={{ minWidth: 440 }}>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Records</TableCell>
-                    <TableCell>Total consumption</TableCell>
-                    <TableCell>Date range</TableCell>
-                    <TableCell>Avg daily</TableCell>
-                    <TableCell>Avg monthly</TableCell>
+                    <TableCell>{t('import.dataset.records')}</TableCell>
+                    <TableCell>{t('import.dataset.totalConsumption')}</TableCell>
+                    <TableCell>{t('import.dataset.dateRange')}</TableCell>
+                    <TableCell>{t('import.dataset.avgDaily')}</TableCell>
+                    <TableCell>{t('import.dataset.avgMonthly')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>

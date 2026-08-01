@@ -3,8 +3,10 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button, Stack, TextField,
   MenuItem, InputAdornment, Alert, Typography, Divider, Box,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../state/AppContext';
 import type { TimeBoundaries } from '../utils/analytics';
+import { LANGUAGES, type Language } from '../i18n/config';
 
 interface Props {
   open: boolean;
@@ -15,22 +17,25 @@ const hh = (h: number) => `${String(h).padStart(2, '0')}:00`;
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
 
 /**
- * Settings dialog: base electricity price + the day/evening/night boundaries
- * that drive the distribution charts, insights and what-if simulator.
- * These boundaries are cosmetic — they never affect bill calculations, which
+ * Settings dialog: UI language, base electricity price, and the day/evening/night
+ * boundaries that drive the distribution charts, insights and what-if simulator.
+ * Those boundaries are cosmetic — they never affect bill calculations, which
  * always use each plan's own rule time-windows.
  */
 export default function SettingsDialog({ open, onClose }: Props) {
-  const { basePrice, setBasePrice, timeBoundaries, setTimeBoundaries } = useApp();
+  const { t } = useTranslation();
+  const { basePrice, setBasePrice, timeBoundaries, setTimeBoundaries, language, setLanguage } = useApp();
 
   const [price, setPrice] = useState(basePrice);
   const [b, setB] = useState<TimeBoundaries>(timeBoundaries);
+  const [lang, setLang] = useState<Language>(language);
 
   // Re-seed local draft when the dialog is (re)opened.
   const [wasOpen, setWasOpen] = useState(false);
   if (open && !wasOpen) {
     setPrice(basePrice);
     setB(timeBoundaries);
+    setLang(language);
     setWasOpen(true);
   } else if (!open && wasOpen) {
     setWasOpen(false);
@@ -38,57 +43,70 @@ export default function SettingsDialog({ open, onClose }: Props) {
 
   const error = useMemo(() => {
     if (!(b.dayStart < b.eveningStart && b.eveningStart < b.nightStart)) {
-      return 'Hours must be increasing: day start < evening start < night start.';
+      return t('settings.orderError');
     }
-    if (price < 0) return 'Base price cannot be negative.';
+    if (price < 0) return t('settings.priceError');
     return null;
-  }, [b, price]);
+  }, [b, price, t]);
 
   const save = () => {
     if (error) return;
     setBasePrice(price);
     setTimeBoundaries(b);
+    setLanguage(lang);
     onClose();
   };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Settings</DialogTitle>
+      <DialogTitle>{t('settings.title')}</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={3}>
+          {/* Language selector — applied when you press Save. */}
+          <TextField
+            select fullWidth size="small" label={t('settings.language')} value={lang}
+            onChange={(e) => setLang(e.target.value as Language)}
+          >
+            {(Object.keys(LANGUAGES) as Language[]).map((lng) => (
+              <MenuItem key={lng} value={lng}>{LANGUAGES[lng]}</MenuItem>
+            ))}
+          </TextField>
+
+          <Divider />
+
           <Box>
-            <Typography variant="overline" color="text.secondary">Base electricity price</Typography>
+            <Typography variant="overline" color="text.secondary">{t('settings.basePriceSection')}</Typography>
             <TextField
               type="number" fullWidth size="small" sx={{ mt: 1 }} value={price}
               onChange={(e) => setPrice(Number(e.target.value))}
               inputProps={{ step: 0.0001, min: 0 }}
-              InputProps={{ endAdornment: <InputAdornment position="end">₪/kWh</InputAdornment> }}
-              helperText="All plan prices are derived from this base per-kWh price."
+              InputProps={{ endAdornment: <InputAdornment position="end">{t('settings.perKwh')}</InputAdornment> }}
+              helperText={t('settings.basePriceHelp')}
             />
           </Box>
 
           <Divider />
 
           <Box>
-            <Typography variant="overline" color="text.secondary">Day / evening / night boundaries</Typography>
+            <Typography variant="overline" color="text.secondary">{t('settings.boundariesSection')}</Typography>
             <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1.5 }}>
-              Used only for the distribution charts, insights and what-if simulator — they never change any bill calculation.
+              {t('settings.boundariesHelp')}
             </Typography>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <TextField
-                select size="small" fullWidth label="Day starts at" value={b.dayStart}
+                select size="small" fullWidth label={t('settings.dayStart')} value={b.dayStart}
                 onChange={(e) => setB({ ...b, dayStart: Number(e.target.value) })}
               >
                 {HOURS.map((h) => <MenuItem key={h} value={h}>{hh(h)}</MenuItem>)}
               </TextField>
               <TextField
-                select size="small" fullWidth label="Evening starts at" value={b.eveningStart}
+                select size="small" fullWidth label={t('settings.eveningStart')} value={b.eveningStart}
                 onChange={(e) => setB({ ...b, eveningStart: Number(e.target.value) })}
               >
                 {HOURS.map((h) => <MenuItem key={h} value={h}>{hh(h)}</MenuItem>)}
               </TextField>
               <TextField
-                select size="small" fullWidth label="Night starts at" value={b.nightStart}
+                select size="small" fullWidth label={t('settings.nightStart')} value={b.nightStart}
                 onChange={(e) => setB({ ...b, nightStart: Number(e.target.value) })}
               >
                 {HOURS.map((h) => <MenuItem key={h} value={h}>{hh(h)}</MenuItem>)}
@@ -96,7 +114,9 @@ export default function SettingsDialog({ open, onClose }: Props) {
             </Stack>
             {!error && (
               <Alert severity="info" sx={{ mt: 2 }}>
-                Day {hh(b.dayStart)}–{hh(b.eveningStart)} · Evening {hh(b.eveningStart)}–{hh(b.nightStart)} · Night {hh(b.nightStart)}–{hh(b.dayStart)}
+                {t('settings.rangeSummary', {
+                  day: hh(b.dayStart), evening: hh(b.eveningStart), night: hh(b.nightStart),
+                })}
               </Alert>
             )}
           </Box>
@@ -105,8 +125,8 @@ export default function SettingsDialog({ open, onClose }: Props) {
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button variant="contained" disabled={!!error} onClick={save}>Save</Button>
+        <Button onClick={onClose}>{t('settings.cancel')}</Button>
+        <Button variant="contained" disabled={!!error} onClick={save}>{t('settings.save')}</Button>
       </DialogActions>
     </Dialog>
   );

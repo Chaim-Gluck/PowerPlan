@@ -72,6 +72,7 @@ export default function TimeSeriesChart({
   const labelFormatter = dateAxis ? (l: string) => fmtDateLabel(l) : undefined;
 
   return (
+    <div dir="ltr">
     <ResponsiveContainer width="100%" height={height}>
       {type === 'line' ? (
         <LineChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: bottomMargin }}>
@@ -91,5 +92,6 @@ export default function TimeSeriesChart({
         </BarChart>
       )}
     </ResponsiveContainer>
+    </div>
   );
 }

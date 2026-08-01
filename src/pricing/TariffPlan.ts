@@ -17,6 +17,15 @@ export interface TariffPlan {
   /** Optional accent color for charts/tables. */
   color?: string;
   rules: TariffRule[];
+
+  // --- i18n keys for built-in default plans (resolved for display; cleared once
+  //     the user edits the corresponding field). User-created plans leave these unset. ---
+  /** Translation key for the name. */
+  nameKey?: string;
+  /** Translation key for the supplier. */
+  supplierKey?: string;
+  /** Translation key for the description. */
+  descriptionKey?: string;
 }
 
 /**

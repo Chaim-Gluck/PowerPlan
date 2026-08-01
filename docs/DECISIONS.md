@@ -76,6 +76,20 @@ each is intentional.
   `powerplan-comparison.pdf/.xlsx` to the repo root; these are ignored so they never get
   committed.
 
+- **i18n / RTL (English + Hebrew).** `react-i18next` with `en.json`/`he.json`; the language
+  lives in app state + `localStorage` and drives (a) i18next, (b) Day.js locale, (c) the
+  document `dir`, and (d) an Emotion RTL cache (`stylis-plugin-rtl`) + `theme.direction`.
+  Non-obvious pieces to preserve:
+  - **Charts are wrapped in `dir="ltr"`** (Recharts isn't RTL-aware). Don't remove it or the
+    axes render inside the plot under Hebrew.
+  - **Pure modules stay UI-agnostic:** `analytics.ts` takes injected label functions and
+    `generateInsights` returns `{key, params}` (translated in the React layer), not strings.
+  - **Default plans carry i18n keys** (`nameKey`/`supplierKey`/`descriptionKey`, and rule
+    labels resolved via `resolvePlan`) so their names follow the language *live*. Editing a
+    field clears its key (becomes a literal custom value).
+  - **Plan names for the engine** are resolved with `i18n.getFixedT(language)` keyed on the
+    language **state** (not the `t` identity, which is stable and wouldn't retrigger the memo).
+
 ---
 
 ## Full UI/GUI decision list (by area)

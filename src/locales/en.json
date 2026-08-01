@@ -1,0 +1,272 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "import": "Import",
+    "plans": "Plans",
+    "compare": "Compare",
+    "insights": "Insights"
+  },
+  "appbar": {
+    "darkMode": "Dark mode",
+    "lightMode": "Light mode",
+    "settings": "Settings"
+  },
+  "common": {
+    "records": "{{count}} records",
+    "months": "{{count}} months",
+    "interval": "{{minutes}}-min interval",
+    "dash": "—"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "basePriceSection": "Base electricity price",
+    "basePriceHelp": "All plan prices are derived from this base per-kWh price.",
+    "boundariesSection": "Day / evening / night boundaries",
+    "boundariesHelp": "Used only for the distribution charts, insights and what-if simulator — they never change any bill calculation.",
+    "dayStart": "Day starts at",
+    "eveningStart": "Evening starts at",
+    "nightStart": "Night starts at",
+    "rangeSummary": "Day {{day}}–{{evening}} · Evening {{evening}}–{{night}} · Night {{night}}–{{day}}",
+    "orderError": "Hours must be increasing: day start < evening start < night start.",
+    "priceError": "Base price cannot be negative.",
+    "perKwh": "₪/kWh",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "charts": {
+    "weekday": {
+      "sun": "Sun", "mon": "Mon", "tue": "Tue", "wed": "Wed", "thu": "Thu", "fri": "Fri", "sat": "Sat"
+    },
+    "weekdayFull": {
+      "sun": "Sunday", "mon": "Monday", "tue": "Tuesday", "wed": "Wednesday", "thu": "Thursday", "fri": "Friday", "sat": "Saturday"
+    },
+    "bucket": {
+      "day": "Day ({{start}}–{{end}})",
+      "evening": "Evening ({{start}}–{{end}})",
+      "night": "Night ({{start}}–{{end}})"
+    },
+    "split": {
+      "weekdays": "Weekdays",
+      "weekend": "Weekend"
+    },
+    "heatmapCell": "{{day}} {{hour}} — {{value}} kWh"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "basePrice": "Base price",
+    "empty": {
+      "title": "No data yet",
+      "body": "Import your IEC meter export (or load the sample) to see your personalized tariff analysis.",
+      "button": "Import data"
+    },
+    "cards": {
+      "totalConsumption": "Total consumption",
+      "baseCost": "Current base cost",
+      "baseCostSub": "at {{price}}/kWh, no discount",
+      "cheapestPlan": "Cheapest plan",
+      "totalSuffix": "{{value}} total",
+      "addPlans": "Add plans to compare",
+      "potentialSavings": "Potential savings",
+      "vsBase": "{{percent}} vs base"
+    },
+    "banner": {
+      "title": "🏆 {{plan}} is your best match",
+      "body": "Saves {{savings}} ({{percent}}) over {{start}}–{{end}}, about {{monthly}}/month.",
+      "cta": "See full comparison"
+    },
+    "charts": {
+      "daily": "Daily usage",
+      "dailySub": "Total kWh per day",
+      "monthly": "Monthly usage",
+      "monthlySub": "Total kWh per calendar month",
+      "byHour": "Consumption by hour of day",
+      "byHourSub": "Summed across the whole period",
+      "byWeekday": "Consumption by weekday",
+      "byWeekdaySub": "Sun–Sat totals",
+      "heatmap": "Weekday × hour heatmap",
+      "heatmapSub": "Where your energy goes across the week",
+      "weekendSplit": "Weekdays vs weekend",
+      "todSplit": "Day / evening / night",
+      "distributionSub": "Consumption distribution"
+    }
+  },
+  "filters": {
+    "from": "From",
+    "to": "To",
+    "allDays": "All days",
+    "weekdays": "Weekdays",
+    "weekend": "Weekend",
+    "reset": "Reset filters"
+  },
+  "import": {
+    "title": "Import electricity data",
+    "dropTitle": "Drop your CSV or Excel file here",
+    "dropSub": "Supports the IEC meter export (meter_LP_…csv) and generic Timestamp + Consumption files. Hourly, half-hour and quarter-hour intervals are detected automatically.",
+    "chooseFile": "Choose file",
+    "loadSample": "Load sample data",
+    "noRecords": "No records found in the file.",
+    "importFailed": "Failed to import file.",
+    "sampleFailed": "Failed to load sample.",
+    "interval": {
+      "quarter": "Quarter-hour (15 min)",
+      "half": "Half-hour (30 min)",
+      "hourly": "Hourly (60 min)",
+      "other": "{{minutes}} min"
+    },
+    "guide": {
+      "intro": "Don’t have the file yet? Download your own 2-year meter report from IEC. It’s a quick, secure, self-service flow — this app can’t log in for you (it has no server and never handles your IEC credentials), but here’s exactly how to get it:",
+      "openPortal": "Open IEC portal",
+      "steps": "Step-by-step guide",
+      "directLink": "Direct link:",
+      "step1Label": "Open the IEC “Remote Reading Info” page",
+      "step1Detail": "Use the button above. It opens on the official IEC site in a new tab so you can log in securely — this app never sees your IEC credentials.",
+      "step2Label": "Log in with your IEC account",
+      "step2Detail": "Sign in (ID number / customer number + the code sent to your phone). If you have more than one meter, pick the electricity consumption meter.",
+      "step3Label": "Request the consumption report (“דוח צריכה”)",
+      "step3Detail": "Choose the widest date range available (up to ~2 years of 15-minute data) and request the report. IEC either lets you download it directly or emails it to you as a CSV.",
+      "step4Label": "Save the CSV file",
+      "step4Detail": "Download it (or save the emailed attachment). It looks like meter_LP_…gmail.com.csv — the same format this app expects.",
+      "step5Label": "Drag it into this app",
+      "step5Detail": "Drop the CSV (or Excel) onto the box above, or use “Choose file”. Everything is parsed locally in your browser — nothing is uploaded anywhere."
+    },
+    "dataset": {
+      "title": "Imported dataset",
+      "clear": "Clear data",
+      "dataset": "dataset",
+      "format": "Format: {{format}}",
+      "includesBilled": "Includes billed cost",
+      "records": "Records",
+      "totalConsumption": "Total consumption",
+      "dateRange": "Date range",
+      "avgDaily": "Avg daily",
+      "avgMonthly": "Avg monthly"
+    }
+  },
+  "plans": {
+    "title": "Tariff plans",
+    "showBundle": "Show bundle-only",
+    "reset": "Reset",
+    "resetTip": "Reset to the built-in default plans (loads the current supplier plans)",
+    "newPlan": "New plan",
+    "bundleIncluded": "{{count}} plan(s) require a bundle (e.g. a gas subscription) and are included in the comparison.",
+    "bundleHidden": "{{count}} bundle-only plan(s) are hidden and excluded from the comparison and \"cheapest\" result.",
+    "cheapest": "Cheapest",
+    "bundleOnly": "Bundle only",
+    "totalChip": "{{value}} total",
+    "savedChip": "{{percent}} saved",
+    "noRules": "No rules — full base price.",
+    "everyDay": "Every day",
+    "copy": " (copy)",
+    "edit": "Edit"
+  },
+  "comparison": {
+    "title": "Plan comparison",
+    "needData": "Import data and define plans to see the comparison.",
+    "excel": "Excel",
+    "pdf": "PDF",
+    "table": {
+      "rank": "#",
+      "plan": "Plan",
+      "totalCost": "Total cost",
+      "savingsVsBase": "Savings vs base",
+      "savingsPercent": "Savings %",
+      "avgMonthly": "Avg monthly",
+      "estYearly": "Est. yearly",
+      "iecBaseline": "IEC — full tariff",
+      "iecBaselineSub": " (stay with the default supplier, no discount)",
+      "cheapest": "Cheapest",
+      "bundle": "Bundle"
+    },
+    "charts": {
+      "monthlyBill": "Monthly bill comparison",
+      "monthlyBillSub": "Cost per month under each plan",
+      "monthlySavings": "Monthly savings vs base",
+      "monthlySavingsSub": "₪ saved each month"
+    },
+    "breakdown": {
+      "title": "Where the bill comes from",
+      "sub": "Cost split by pricing rule",
+      "plan": "Plan",
+      "rule": "Rule",
+      "discount": "Discount",
+      "kwh": "kWh",
+      "cost": "Cost",
+      "noDiscount": "No discount"
+    },
+    "whatIf": {
+      "title": "What-if simulator",
+      "intro": "Shift part of your consumption between times of day and see how the optimal plan changes.",
+      "shiftFrom": "Shift from",
+      "to": "To",
+      "shiftAmount": "Shift {{percent}}%",
+      "result": "After shifting {{percent}}% of {{from}} usage to {{to}}, the best plan would be {{plan}} at {{cost}} ({{savings}} saved).",
+      "changed": " That's a change from your current best, {{plan}}.",
+      "same": " (Same plan as today.)"
+    }
+  },
+  "insights": {
+    "title": "Insights",
+    "needData": "Import data to generate insights.",
+    "weekdayEvening": "You consume {{percent}} of your electricity during weekday evenings.",
+    "todSplit": "Your usage splits into {{day}} daytime, {{evening}} evening and {{night}} night.",
+    "weekendShare": "{{percent}} of your consumption falls on weekends (Fri–Sat).",
+    "bestPlan": "Your best plan is “{{plan}}”, saving {{savings}} ({{percent}}) over the imported period vs. the flat base price.",
+    "discountShare": "Under “{{plan}}”, only {{percent}} of your usage occurs during discount hours.",
+    "weakPlan": "The “{{plan}}” plan saves only {{percent}} because your usage barely overlaps its discount window.",
+    "engineCheck": "Engine check: computed {{computed}} vs. billed {{billed}} ({{diff}} {{direction}}).",
+    "over": "over",
+    "under": "under",
+    "validation": {
+      "text": "Engine validation — your file included a real billed cost. For “{{plan}}” the engine computed {{computed}} vs. the billed {{billed}} (difference {{diff}}).",
+      "whereWeekend": "Where your consumption falls",
+      "todSub": "Time-of-day distribution"
+    }
+  },
+  "editor": {
+    "editTitle": "Edit plan",
+    "newTitle": "New plan",
+    "name": "Plan name",
+    "nameRequired": "Name is required",
+    "supplier": "Supplier",
+    "supplierPlaceholder": "e.g. Electra Power",
+    "color": "Color",
+    "description": "Description (optional)",
+    "bundleOnly": "Only available as a bundle (e.g. requires a gas subscription)",
+    "rules": "Pricing rules",
+    "ruleLabel": "Rule label (optional)",
+    "start": "Start",
+    "end": "End",
+    "endHelp": "00:00 as end = midnight (24:00)",
+    "discount": "Discount %",
+    "overnight": "Overnight window (wraps past midnight).",
+    "addRule": "Add rule",
+    "cancel": "Cancel",
+    "savePlan": "Save plan",
+    "warnNoRules": "This plan has no rules — every interval will be charged at the full base price.",
+    "warnInvalidDiscount": "A rule has an invalid discount ({{percent}}%). Must be between 0 and 100.",
+    "warnNoDays": "A rule has no days selected and will never apply. Select at least one day.",
+    "warnOverlap": "Rules \"{{a}}\" and \"{{b}}\" overlap in time — the more specific (narrower) rule will win.",
+    "ruleN": "rule {{n}}"
+  },
+  "plansDefault": {
+    "supplier": {
+      "electra": "Electra Power",
+      "cellcom": "Cellcom Energy",
+      "amisragas": "Amisragas",
+      "pazgas": "Pazgas"
+    },
+    "anytime": { "name": "Anytime 6.5%", "desc": "Fixed 6.5% discount, 24/7, any meter." },
+    "electraDay": { "name": "Day 21%", "desc": "21% off Sun–Thu 07:00–17:00 (smart meter required)." },
+    "electraNight": { "name": "Night 21%", "desc": "21% off Sun–Thu 23:00–07:00 (smart meter required)." },
+    "tenXten": { "name": "10×10", "desc": "10% off Sun–Thu 10:00–22:00 (smart meter required)." },
+    "cellcomFixed": { "name": "Fixed 6%", "desc": "Fixed 6% discount, 24/7, any meter." },
+    "cellcomDay": { "name": "Day 20%", "desc": "20% off Sun–Thu 07:00–17:00 (smart meter required)." },
+    "cellcomFamily": { "name": "Family 18%", "desc": "18% off Sun–Thu 14:00–20:00 (smart meter required)." },
+    "cellcomNight": { "name": "Night 15%", "desc": "15% off every day 23:00–07:00 (smart meter required)." },
+    "amisragasGas": { "name": "Gas-customer 7%", "desc": "Fixed 7% discount, 24/7 — requires an Amisragas gas subscription (bundle deal)." },
+    "pazgasFixed": { "name": "Fixed 5%", "desc": "Fixed 5% discount, 24/7 (5–7% depending on the current joining promo). Optional 10% Yellow-app cashback instead." },
+    "pazgasDay": { "name": "Day 15%", "desc": "15% off Sun–Thu 07:00–17:00 (smart meter required)." },
+    "pazgasNight": { "name": "Night 20%", "desc": "20% off every day 23:00–07:00 (smart meter required)." }
+  }
+}

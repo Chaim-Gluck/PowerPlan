@@ -5,6 +5,7 @@ import SavingsIcon from '@mui/icons-material/Savings';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../state/AppContext';
 import StatCard from '../components/StatCard';
 import ChartCard from '../components/ChartCard';
@@ -14,7 +15,7 @@ import HourWeekdayHeatmap from '../charts/HourWeekdayHeatmap';
 import DistributionPieChart from '../charts/DistributionPieChart';
 import {
   dailyConsumption, monthlyConsumption, consumptionByHour, consumptionByWeekday,
-  hourWeekdayHeatmap, weekdayWeekendSplit, timeOfDaySplit,
+  hourWeekdayHeatmap, weekdayWeekendSplit, timeOfDaySplit, WEEKDAY_KEYS,
 } from '../utils/analytics';
 import { formatKWh, formatNIS, formatPercent } from '../utils/format';
 
@@ -22,28 +23,35 @@ const gridCards = { display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', s
 const gridCharts = { display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } };
 
 export default function Dashboard({ onNavigate }: { onNavigate: (tab: string) => void }) {
+  const { t, i18n } = useTranslation();
   const { records, summary, comparison, basePrice, setBasePrice, timeBoundaries } = useApp();
 
-  const charts = useMemo(() => ({
-    daily: dailyConsumption(records),
-    monthly: monthlyConsumption(records),
-    byHour: consumptionByHour(records),
-    byWeekday: consumptionByWeekday(records),
-    heat: hourWeekdayHeatmap(records),
-    weekend: weekdayWeekendSplit(records),
-    tod: timeOfDaySplit(records, timeBoundaries),
-  }), [records, timeBoundaries]);
+  const charts = useMemo(() => {
+    const weekdayLabel = (i: number) => t(`charts.weekday.${WEEKDAY_KEYS[i]}`);
+    const weekendLabels = { weekdays: t('charts.split.weekdays'), weekend: t('charts.split.weekend') };
+    const bucketLabel = (bucket: 'day' | 'evening' | 'night', start: string, end: string) =>
+      t(`charts.bucket.${bucket}`, { start, end });
+    return {
+      daily: dailyConsumption(records),
+      monthly: monthlyConsumption(records),
+      byHour: consumptionByHour(records),
+      byWeekday: consumptionByWeekday(records, weekdayLabel),
+      heat: hourWeekdayHeatmap(records),
+      weekend: weekdayWeekendSplit(records, weekendLabels),
+      tod: timeOfDaySplit(records, timeBoundaries, bucketLabel),
+    };
+  }, [records, timeBoundaries, t, i18n.language]);
 
   if (records.length === 0) {
     return (
       <Box sx={{ textAlign: 'center', py: 10 }}>
         <BoltIcon sx={{ fontSize: 64, color: 'primary.main', mb: 2 }} />
-        <Typography variant="h5" gutterBottom>No data yet</Typography>
+        <Typography variant="h5" gutterBottom>{t('dashboard.empty.title')}</Typography>
         <Typography color="text.secondary" sx={{ mb: 3 }}>
-          Import your IEC meter export (or load the sample) to see your personalized tariff analysis.
+          {t('dashboard.empty.body')}
         </Typography>
         <Button variant="contained" size="large" startIcon={<UploadFileIcon />} onClick={() => onNavigate('import')}>
-          Import data
+          {t('dashboard.empty.button')}
         </Button>
       </Box>
     );
@@ -54,12 +62,12 @@ export default function Dashboard({ onNavigate }: { onNavigate: (tab: string) =>
   return (
     <Stack spacing={3}>
       <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={2}>
-        <Typography variant="h4">Dashboard</Typography>
+        <Typography variant="h4">{t('dashboard.title')}</Typography>
         <TextField
-          label="Base price" type="number" size="small" value={basePrice}
+          label={t('dashboard.basePrice')} type="number" size="small" value={basePrice}
           onChange={(e) => setBasePrice(Math.max(0, Number(e.target.value)))}
           inputProps={{ step: 0.01, min: 0 }}
-          InputProps={{ endAdornment: <InputAdornment position="end">₪/kWh</InputAdornment> }}
+          InputProps={{ endAdornment: <InputAdornment position="end">{t('settings.perKwh')}</InputAdornment> }}
           sx={{ maxWidth: 200 }}
         />
       </Stack>
@@ -68,15 +76,15 @@ export default function Dashboard({ onNavigate }: { onNavigate: (tab: string) =>
 
       {/* KPI cards */}
       <Box sx={gridCards}>
-        <StatCard title="Total consumption" value={formatKWh(summary.totalConsumption)}
+        <StatCard title={t('dashboard.cards.totalConsumption')} value={formatKWh(summary.totalConsumption)}
           subtitle={`${summary.startDate} → ${summary.endDate}`} icon={<BoltIcon />} color="#1976d2" />
-        <StatCard title="Current base cost" value={formatNIS(comparison?.baseCost ?? 0)}
-          subtitle={`at ${formatNIS(basePrice, 4)}/kWh, no discount`} icon={<PaidIcon />} color="#ed6c02" />
-        <StatCard title="Cheapest plan" value={cheapest ? cheapest.planName : '—'}
-          subtitle={cheapest ? `${formatNIS(cheapest.totalCost)} total` : 'Add plans to compare'}
+        <StatCard title={t('dashboard.cards.baseCost')} value={formatNIS(comparison?.baseCost ?? 0)}
+          subtitle={t('dashboard.cards.baseCostSub', { price: formatNIS(basePrice, 4) })} icon={<PaidIcon />} color="#ed6c02" />
+        <StatCard title={t('dashboard.cards.cheapestPlan')} value={cheapest ? cheapest.planName : t('common.dash')}
+          subtitle={cheapest ? t('dashboard.cards.totalSuffix', { value: formatNIS(cheapest.totalCost) }) : t('dashboard.cards.addPlans')}
           icon={<EmojiEventsIcon />} color="#2e7d32" accent />
-        <StatCard title="Potential savings" value={cheapest ? formatNIS(cheapest.savings) : '—'}
-          subtitle={cheapest ? `${formatPercent(cheapest.savingsPercent)} vs base` : ''}
+        <StatCard title={t('dashboard.cards.potentialSavings')} value={cheapest ? formatNIS(cheapest.savings) : t('common.dash')}
+          subtitle={cheapest ? t('dashboard.cards.vsBase', { percent: formatPercent(cheapest.savingsPercent) }) : ''}
           icon={<SavingsIcon />} color="#7b1fa2" accent />
       </Box>
 
@@ -85,14 +93,18 @@ export default function Dashboard({ onNavigate }: { onNavigate: (tab: string) =>
           <CardContent>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} justifyContent="space-between">
               <Box>
-                <Typography variant="h6">🏆 {cheapest.planName} is your best match</Typography>
+                <Typography variant="h6">{t('dashboard.banner.title', { plan: cheapest.planName })}</Typography>
                 <Typography variant="body2">
-                  Saves {formatNIS(cheapest.savings)} ({formatPercent(cheapest.savingsPercent)}) over {summary.startDate}–{summary.endDate},
-                  about {formatNIS(cheapest.averageMonthlyCost)}/month.
+                  {t('dashboard.banner.body', {
+                    savings: formatNIS(cheapest.savings),
+                    percent: formatPercent(cheapest.savingsPercent),
+                    start: summary.startDate, end: summary.endDate,
+                    monthly: formatNIS(cheapest.averageMonthlyCost),
+                  })}
                 </Typography>
               </Box>
               <Button variant="contained" color="inherit" sx={{ color: 'success.main' }} onClick={() => onNavigate('comparison')}>
-                See full comparison
+                {t('dashboard.banner.cta')}
               </Button>
             </Stack>
           </CardContent>
@@ -101,37 +113,37 @@ export default function Dashboard({ onNavigate }: { onNavigate: (tab: string) =>
 
       {/* Usage charts */}
       <Box sx={gridCharts}>
-        <ChartCard title="Daily usage" subtitle="Total kWh per day">
+        <ChartCard title={t('dashboard.charts.daily')} subtitle={t('dashboard.charts.dailySub')}>
           <TimeSeriesChart data={charts.daily} type="line" dateAxis />
         </ChartCard>
-        <ChartCard title="Monthly usage" subtitle="Total kWh per calendar month">
+        <ChartCard title={t('dashboard.charts.monthly')} subtitle={t('dashboard.charts.monthlySub')}>
           <TimeSeriesChart data={charts.monthly} type="bar" color="#2e7d32" dateAxis />
         </ChartCard>
-        <ChartCard title="Consumption by hour of day" subtitle="Summed across the whole period">
+        <ChartCard title={t('dashboard.charts.byHour')} subtitle={t('dashboard.charts.byHourSub')}>
           <TimeSeriesChart data={charts.byHour} type="bar" color="#ed6c02" tickInterval={2} />
         </ChartCard>
-        <ChartCard title="Consumption by weekday" subtitle="Sun–Sat totals">
+        <ChartCard title={t('dashboard.charts.byWeekday')} subtitle={t('dashboard.charts.byWeekdaySub')}>
           <TimeSeriesChart data={charts.byWeekday} type="bar" color="#7b1fa2" tickInterval={0} />
         </ChartCard>
       </Box>
 
-      <ChartCard title="Weekday × hour heatmap" subtitle="Where your energy goes across the week">
+      <ChartCard title={t('dashboard.charts.heatmap')} subtitle={t('dashboard.charts.heatmapSub')}>
         <HourWeekdayHeatmap cells={charts.heat} />
       </ChartCard>
 
       <Box sx={gridCharts}>
-        <ChartCard title="Weekdays vs weekend" subtitle="Consumption distribution">
+        <ChartCard title={t('dashboard.charts.weekendSplit')} subtitle={t('dashboard.charts.distributionSub')}>
           <DistributionPieChart data={charts.weekend} colors={['#1976d2', '#ed6c02']} />
         </ChartCard>
-        <ChartCard title="Day / evening / night" subtitle="Consumption distribution">
+        <ChartCard title={t('dashboard.charts.todSplit')} subtitle={t('dashboard.charts.distributionSub')}>
           <DistributionPieChart data={charts.tod} colors={['#f9a825', '#7b1fa2', '#0288d1']} />
         </ChartCard>
       </Box>
 
       <Box>
-        <Chip label={`${summary.recordCount.toLocaleString()} records`} sx={{ mr: 1 }} />
-        <Chip label={`${summary.intervalMinutes}-min interval`} sx={{ mr: 1 }} />
-        <Chip label={`${summary.monthCount} months`} />
+        <Chip label={t('common.records', { count: summary.recordCount })} sx={{ mr: 1 }} />
+        <Chip label={t('common.interval', { minutes: summary.intervalMinutes })} sx={{ mr: 1 }} />
+        <Chip label={t('common.months', { count: summary.monthCount })} />
       </Box>
     </Stack>
   );

@@ -9,27 +9,42 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import LinkIcon from '@mui/icons-material/Link';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useApp } from '../state/AppContext';
 import PlanEditorDialog from '../components/PlanEditorDialog';
-import { makeId, minutesToTime, describeRule, MINUTES_PER_DAY, type TariffPlan, type TariffRule } from '../pricing';
+import { makeId, minutesToTime, MINUTES_PER_DAY, type TariffPlan, type TariffRule } from '../pricing';
+import { WEEKDAY_KEYS } from '../utils/analytics';
 import { formatNIS, formatPercent } from '../utils/format';
-
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const gridPlans = { display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', xl: 'repeat(3, 1fr)' } };
 
 export default function PlansPage() {
+  const { t } = useTranslation();
   const { plans, addPlan, updatePlan, deletePlan, resetPlans, comparison, includeBundlePlans, setIncludeBundlePlans } = useApp();
   const [editing, setEditing] = useState<TariffPlan | null>(null);
   const [open, setOpen] = useState(false);
 
   const openNew = () => { setEditing(null); setOpen(true); };
-  const openEdit = (plan: TariffPlan) => { setEditing(plan); setOpen(true); };
+  const openEdit = (plan: TariffPlan) => {
+    // Show resolved (translated) text in the editor while keeping the i18n keys,
+    // so an unedited default stays translatable; editing a field clears its key.
+    setEditing({
+      ...plan,
+      name: plan.nameKey ? t(plan.nameKey) : plan.name,
+      supplier: plan.supplierKey ? t(plan.supplierKey) : plan.supplier,
+      description: plan.descriptionKey ? t(plan.descriptionKey) : plan.description,
+    });
+    setOpen(true);
+  };
   const duplicate = (plan: TariffPlan) => {
     const copy: TariffPlan = {
       ...JSON.parse(JSON.stringify(plan)),
       id: makeId('plan'),
-      name: `${plan.name} (copy)`,
+      name: `${plan.nameKey ? t(plan.nameKey) : plan.name}${t('plans.copy')}`,
+      nameKey: undefined, supplierKey: undefined, descriptionKey: undefined,
+      supplier: plan.supplierKey ? t(plan.supplierKey) : plan.supplier,
+      description: plan.descriptionKey ? t(plan.descriptionKey) : plan.description,
       rules: plan.rules.map((r) => ({ ...r, id: makeId('rule') })),
     };
     addPlan(copy);
@@ -48,25 +63,25 @@ export default function PlansPage() {
   return (
     <Stack spacing={3}>
       <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={2}>
-        <Typography variant="h4">Tariff plans</Typography>
+        <Typography variant="h4">{t('plans.title')}</Typography>
         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
           <FormControlLabel
             sx={{ mr: 1 }}
             control={<Switch checked={includeBundlePlans} onChange={(e) => setIncludeBundlePlans(e.target.checked)} />}
-            label="Show bundle-only"
+            label={t('plans.showBundle')}
           />
-          <Tooltip title="Reset to the built-in default plans (loads the current supplier plans)">
-            <Button color="inherit" startIcon={<RestartAltIcon />} onClick={resetPlans}>Reset</Button>
+          <Tooltip title={t('plans.resetTip')}>
+            <Button color="inherit" startIcon={<RestartAltIcon />} onClick={resetPlans}>{t('plans.reset')}</Button>
           </Tooltip>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={openNew}>New plan</Button>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={openNew}>{t('plans.newPlan')}</Button>
         </Stack>
       </Stack>
 
       {bundleCount > 0 && (
         <Alert severity={includeBundlePlans ? 'info' : 'warning'} icon={<LinkIcon />}>
           {includeBundlePlans
-            ? `${bundleCount} plan(s) require a bundle (e.g. a gas subscription) and are included in the comparison.`
-            : `${bundleCount} bundle-only plan(s) are hidden and excluded from the comparison and "cheapest" result.`}
+            ? t('plans.bundleIncluded', { count: bundleCount })
+            : t('plans.bundleHidden', { count: bundleCount })}
         </Alert>
       )}
 
@@ -78,48 +93,48 @@ export default function PlansPage() {
               <CardContent>
                 <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
                   <Box>
-                    <Typography variant="h6">{plan.name}</Typography>
-                    {plan.supplier && (
+                    <Typography variant="h6">{plan.nameKey ? t(plan.nameKey) : plan.name}</Typography>
+                    {(plan.supplierKey || plan.supplier) && (
                       <Typography variant="caption" sx={{ color: plan.color ?? 'primary.main', fontWeight: 700, letterSpacing: 0.3 }}>
-                        {plan.supplier}
+                        {plan.supplierKey ? t(plan.supplierKey) : plan.supplier}
                       </Typography>
                     )}
-                    {plan.description && (
-                      <Typography variant="body2" color="text.secondary">{plan.description}</Typography>
+                    {(plan.descriptionKey || plan.description) && (
+                      <Typography variant="body2" color="text.secondary">{plan.descriptionKey ? t(plan.descriptionKey) : plan.description}</Typography>
                     )}
                   </Box>
-                  {result?.isCheapest && <Chip color="success" size="small" label="Cheapest" />}
+                  {result?.isCheapest && <Chip color="success" size="small" label={t('plans.cheapest')} />}
                 </Stack>
 
                 {plan.bundleOnly && (
-                  <Chip size="small" color="warning" variant="outlined" icon={<LinkIcon />} label="Bundle only" sx={{ mt: 1 }} />
+                  <Chip size="small" color="warning" variant="outlined" icon={<LinkIcon />} label={t('plans.bundleOnly')} sx={{ mt: 1 }} />
                 )}
 
                 {result && (
                   <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
-                    <Chip size="small" variant="outlined" label={`${formatNIS(result.totalCost)} total`} />
-                    <Chip size="small" variant="outlined" color="success" label={`${formatPercent(result.savingsPercent)} saved`} />
+                    <Chip size="small" variant="outlined" label={t('plans.totalChip', { value: formatNIS(result.totalCost) })} />
+                    <Chip size="small" variant="outlined" color="success" label={t('plans.savedChip', { percent: formatPercent(result.savingsPercent) })} />
                   </Stack>
                 )}
 
                 <Divider sx={{ my: 1.5 }} />
                 <Stack spacing={1}>
                   {plan.rules.length === 0 && (
-                    <Typography variant="caption" color="text.secondary">No rules — full base price.</Typography>
+                    <Typography variant="caption" color="text.secondary">{t('plans.noRules')}</Typography>
                   )}
                   {plan.rules.map((rule) => (
                     <Box key={rule.id} sx={{ fontSize: 13 }}>
                       <Chip size="small" label={`${rule.discountPercent}%`} color="primary" sx={{ mr: 1 }} />
-                      {rule.label || describeRule(rule)}
+                      {rule.label || `${rule.discountPercent}% • ${formatDays(rule, t)}`}
                       <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                        {formatDays(rule)} · {formatWindow(rule)}
+                        {formatDays(rule, t)} · {formatWindow(rule)}
                       </Typography>
                     </Box>
                   ))}
                 </Stack>
               </CardContent>
               <CardActions>
-                <Button size="small" startIcon={<EditIcon />} onClick={() => openEdit(plan)}>Edit</Button>
+                <Button size="small" startIcon={<EditIcon />} onClick={() => openEdit(plan)}>{t('plans.edit')}</Button>
                 <IconButton size="small" onClick={() => duplicate(plan)} aria-label="duplicate"><ContentCopyIcon fontSize="small" /></IconButton>
                 <Box sx={{ flexGrow: 1 }} />
                 <IconButton size="small" color="error" onClick={() => deletePlan(plan.id)} aria-label="delete"><DeleteIcon fontSize="small" /></IconButton>
@@ -134,9 +149,9 @@ export default function PlansPage() {
   );
 }
 
-function formatDays(rule: TariffRule): string {
-  if (rule.daysOfWeek.length === 0 || rule.daysOfWeek.length === 7) return 'Every day';
-  return rule.daysOfWeek.map((d) => DAY_LABELS[d]).join(', ');
+function formatDays(rule: TariffRule, t: TFunction): string {
+  if (rule.daysOfWeek.length === 0 || rule.daysOfWeek.length === 7) return t('plans.everyDay');
+  return rule.daysOfWeek.map((d) => t(`charts.weekday.${WEEKDAY_KEYS[d]}`)).join(', ');
 }
 function formatWindow(rule: TariffRule): string {
   const start = minutesToTime(rule.startMinutes === MINUTES_PER_DAY ? 0 : rule.startMinutes);

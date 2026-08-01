@@ -29,89 +29,89 @@ function rid(prefix: string): string {
   return `${prefix}_seed_${seq}_${makeId('x').slice(-4)}`;
 }
 
-/** Build a single all-day flat-discount plan. */
-function flatPlan(name: string, supplier: string, color: string, percent: number, description: string, bundleOnly = false): TariffPlan {
+/** English fallbacks are kept alongside i18n keys so the plan reads sensibly
+ *  even before translation resolves. `slug` maps to `plansDefault.<slug>.*`. */
+interface Seed {
+  slug: string;
+  supplierSlug: keyof typeof COLORS;
+  name: string;
+  supplier: string;
+  description: string;
+  percent: number;
+  bundleOnly?: boolean;
+}
+
+function base(seed: Seed): Omit<TariffPlan, 'rules'> {
   return {
     id: rid('plan'),
-    name,
-    supplier,
-    color,
-    description,
-    bundleOnly,
-    rules: [
-      {
-        id: rid('rule'),
-        label: `${percent}% • all day, every day`,
-        daysOfWeek: ALL_DAYS,
-        startMinutes: timeToMinutes('00:00'),
-        endMinutes: timeToMinutes('24:00'),
-        discountPercent: percent,
-      },
-    ],
+    name: seed.name,
+    supplier: seed.supplier,
+    description: seed.description,
+    color: COLORS[seed.supplierSlug],
+    bundleOnly: seed.bundleOnly,
+    nameKey: `plansDefault.${seed.slug}.name`,
+    descriptionKey: `plansDefault.${seed.slug}.desc`,
+    supplierKey: `plansDefault.supplier.${seed.supplierSlug}`,
   };
 }
 
-/** Build a single time-window plan (one rule). */
-function windowPlan(
-  name: string, supplier: string, color: string, description: string,
-  days: number[], start: string, end: string, percent: number,
-): TariffPlan {
+/** All-day, every-day flat-discount plan. Rule label is intentionally omitted so
+ *  the UI renders a translated fallback. */
+function flatPlan(seed: Seed): TariffPlan {
   return {
-    id: rid('plan'),
-    name,
-    supplier,
-    color,
-    description,
-    rules: [
-      {
-        id: rid('rule'),
-        label: `${percent}% • ${start}–${end}`,
-        daysOfWeek: days,
-        startMinutes: timeToMinutes(start),
-        endMinutes: timeToMinutes(end),
-        discountPercent: percent,
-      },
-    ],
+    ...base(seed),
+    rules: [{
+      id: rid('rule'),
+      daysOfWeek: ALL_DAYS,
+      startMinutes: timeToMinutes('00:00'),
+      endMinutes: timeToMinutes('24:00'),
+      discountPercent: seed.percent,
+    }],
+  };
+}
+
+/** Single time-window plan (one rule, no label -> translated fallback). */
+function windowPlan(seed: Seed, days: number[], start: string, end: string): TariffPlan {
+  return {
+    ...base(seed),
+    rules: [{
+      id: rid('rule'),
+      daysOfWeek: days,
+      startMinutes: timeToMinutes(start),
+      endMinutes: timeToMinutes(end),
+      discountPercent: seed.percent,
+    }],
   };
 }
 
 /**
- * Real Israeli electricity supplier discount tracks (as advertised in
- * 2025–2026, following the electricity-market reform). Percentages and hours
- * come from public supplier pages and comparison sites — ALWAYS confirm the
- * exact current terms with the supplier before switching.
- *
- * Notes:
- * - Time-based plans (day/night/etc.) require a smart meter.
- * - Each discount applies only to the variable (per-kWh) part of the bill,
- *   which is exactly what this app models.
- * - Suppliers use DIFFERENT hour windows (e.g. Electra 10×10 is 10:00–22:00,
- *   Cellcom Family is 14:00–20:00); each window is encoded in the plan's own
- *   rules, so pricing is always accurate regardless of the cosmetic
- *   day/evening/night boundaries used by the distribution charts.
+ * Real Israeli electricity supplier discount tracks (2025–2026). Percentages and
+ * hours come from public supplier pages — ALWAYS confirm current terms before
+ * switching. Each plan carries i18n keys (`plansDefault.*`) so its name,
+ * supplier and description follow the active language.
  */
 export function defaultPlans(): TariffPlan[] {
   seq = 0;
   return [
-    // ---- Electra Power (סופר פאוור) ----
-    flatPlan('Anytime 6.5%', 'Electra Power', COLORS.electra, 6.5, 'Fixed 6.5% discount, 24/7, any meter.'),
-    windowPlan('Day 21%', 'Electra Power', COLORS.electra, '21% off Sun–Thu 07:00–17:00 (smart meter required).', WORK_WEEK, '07:00', '17:00', 21),
-    windowPlan('Night 21%', 'Electra Power', COLORS.electra, '21% off Sun–Thu 23:00–07:00 (smart meter required).', WORK_WEEK, '23:00', '07:00', 21),
-    windowPlan('10×10', 'Electra Power', COLORS.electra, '10% off Sun–Thu 10:00–22:00 (smart meter required).', WORK_WEEK, '10:00', '22:00', 10),
+    // ---- Electra Power (אלקטרה פאוור) ----
+    flatPlan({ slug: 'anytime', supplierSlug: 'electra', name: 'Anytime 6.5%', supplier: 'Electra Power', description: 'Fixed 6.5% discount, 24/7, any meter.', percent: 6.5 }),
+    windowPlan({ slug: 'electraDay', supplierSlug: 'electra', name: 'Day 21%', supplier: 'Electra Power', description: '21% off Sun–Thu 07:00–17:00 (smart meter required).', percent: 21 }, WORK_WEEK, '07:00', '17:00'),
+    windowPlan({ slug: 'electraNight', supplierSlug: 'electra', name: 'Night 21%', supplier: 'Electra Power', description: '21% off Sun–Thu 23:00–07:00 (smart meter required).', percent: 21 }, WORK_WEEK, '23:00', '07:00'),
+    windowPlan({ slug: 'tenXten', supplierSlug: 'electra', name: '10×10', supplier: 'Electra Power', description: '10% off Sun–Thu 10:00–22:00 (smart meter required).', percent: 10 }, WORK_WEEK, '10:00', '22:00'),
 
     // ---- Cellcom Energy (סלקום אנרג'י) ----
-    flatPlan('Fixed 6%', 'Cellcom Energy', COLORS.cellcom, 6, 'Fixed 6% discount, 24/7, any meter.'),
-    windowPlan('Day 20%', 'Cellcom Energy', COLORS.cellcom, '20% off Sun–Thu 07:00–17:00 (smart meter required).', WORK_WEEK, '07:00', '17:00', 20),
-    windowPlan('Family 18%', 'Cellcom Energy', COLORS.cellcom, '18% off Sun–Thu 14:00–20:00 (smart meter required).', WORK_WEEK, '14:00', '20:00', 18),
-    windowPlan('Night 15%', 'Cellcom Energy', COLORS.cellcom, '15% off every day 23:00–07:00 (smart meter required).', ALL_DAYS, '23:00', '07:00', 15),
+    flatPlan({ slug: 'cellcomFixed', supplierSlug: 'cellcom', name: 'Fixed 6%', supplier: 'Cellcom Energy', description: 'Fixed 6% discount, 24/7, any meter.', percent: 6 }),
+    windowPlan({ slug: 'cellcomDay', supplierSlug: 'cellcom', name: 'Day 20%', supplier: 'Cellcom Energy', description: '20% off Sun–Thu 07:00–17:00 (smart meter required).', percent: 20 }, WORK_WEEK, '07:00', '17:00'),
+    windowPlan({ slug: 'cellcomFamily', supplierSlug: 'cellcom', name: 'Family 18%', supplier: 'Cellcom Energy', description: '18% off Sun–Thu 14:00–20:00 (smart meter required).', percent: 18 }, WORK_WEEK, '14:00', '20:00'),
+    windowPlan({ slug: 'cellcomNight', supplierSlug: 'cellcom', name: 'Night 15%', supplier: 'Cellcom Energy', description: '15% off every day 23:00–07:00 (smart meter required).', percent: 15 }, ALL_DAYS, '23:00', '07:00'),
 
     // ---- Amisragas (אמישראגז) ----
-    flatPlan('Gas-customer 7%', 'Amisragas', COLORS.amisragas, 7, 'Fixed 7% discount, 24/7 — requires an Amisragas gas subscription (bundle deal).', true),
+    flatPlan({ slug: 'amisragasGas', supplierSlug: 'amisragas', name: 'Gas-customer 7%', supplier: 'Amisragas', description: 'Fixed 7% discount, 24/7 — requires an Amisragas gas subscription (bundle deal).', percent: 7, bundleOnly: true }),
 
     // ---- Pazgas (פזגז) ----
-    flatPlan('Fixed 5%', 'Pazgas', COLORS.pazgas, 5, 'Fixed 5% discount, 24/7 (5–7% depending on the current joining promo). Optional 10% Yellow-app cashback instead.'),
-    windowPlan('Day 15%', 'Pazgas', COLORS.pazgas, '15% off Sun–Thu 07:00–17:00 (smart meter required).', WORK_WEEK, '07:00', '17:00', 15),
-    windowPlan('Night 20%', 'Pazgas', COLORS.pazgas, '20% off every day 23:00–07:00 (smart meter required).', ALL_DAYS, '23:00', '07:00', 20),
+    flatPlan({ slug: 'pazgasFixed', supplierSlug: 'pazgas', name: 'Fixed 5%', supplier: 'Pazgas', description: 'Fixed 5% discount, 24/7 (5–7% depending on the current joining promo). Optional 10% Yellow-app cashback instead.', percent: 5 }),
+    windowPlan({ slug: 'pazgasDay', supplierSlug: 'pazgas', name: 'Day 15%', supplier: 'Pazgas', description: '15% off Sun–Thu 07:00–17:00 (smart meter required).', percent: 15 }, WORK_WEEK, '07:00', '17:00'),
+    windowPlan({ slug: 'pazgasNight', supplierSlug: 'pazgas', name: 'Night 20%', supplier: 'Pazgas', description: '20% off every day 23:00–07:00 (smart meter required).', percent: 20 }, ALL_DAYS, '23:00', '07:00'),
   ];
 }
 

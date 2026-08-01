@@ -3,10 +3,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
 import dayjs, { type Dayjs } from 'dayjs';
+import { useTranslation } from 'react-i18next';
 import {
   enrichRecords,
   defaultPlans,
@@ -27,6 +29,8 @@ import {
   clearData as clearStoredData,
 } from '../utils/storage';
 import { summarize, DEFAULT_TIME_BOUNDARIES, type DataSummary, type TimeBoundaries } from '../utils/analytics';
+import { resolvePlan } from '../utils/planDisplay';
+import type { Language } from '../i18n/config';
 
 export type FilterMode = 'all' | 'weekday' | 'weekend';
 
@@ -39,6 +43,8 @@ interface AppState {
   plans: TariffPlan[];
   basePrice: number;
   darkMode: boolean;
+  /** Active UI language. */
+  language: Language;
   /** Configurable day/evening/night boundaries used by distribution analytics. */
   timeBoundaries: TimeBoundaries;
   /** Whether bundle-only plans are included in the comparison and plan list. */
@@ -62,6 +68,7 @@ interface AppContextValue extends AppState {
   clearData: () => void;
   setBasePrice: (price: number) => void;
   toggleDarkMode: () => void;
+  setLanguage: (lng: Language) => void;
   setTimeBoundaries: (b: TimeBoundaries) => void;
   setIncludeBundlePlans: (v: boolean) => void;
   setDateRange: (range: [Dayjs | null, Dayjs | null]) => void;
@@ -76,66 +83,67 @@ interface AppContextValue extends AppState {
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [rawRecords, setRawRecords] = useState<ConsumptionRecord[]>([]);
-  const [intervalMinutes, setIntervalMinutes] = useState(60);
-  const [fileName, setFileName] = useState<string | undefined>(undefined);
-  const [plans, setPlans] = useState<TariffPlan[]>([]);
-  const [basePrice, setBasePriceState] = useState(DEFAULT_BASE_PRICE);
-  const [darkMode, setDarkMode] = useState(false);
-  const [timeBoundaries, setTimeBoundariesState] = useState<TimeBoundaries>(DEFAULT_TIME_BOUNDARIES);
-  const [includeBundlePlans, setIncludeBundlePlansState] = useState(true);
+  const { i18n } = useTranslation();
+  // Read persisted state ONCE, synchronously, so initial state already reflects
+  // localStorage. This avoids the "default -> hydrate" race (which, under
+  // StrictMode, could persist a default value over a just-loaded one).
+  const initialRef = useRef<{
+    data: ReturnType<typeof loadData>;
+    plans: ReturnType<typeof loadPlans>;
+    settings: ReturnType<typeof loadSettings>;
+  } | null>(null);
+  if (!initialRef.current) {
+    initialRef.current = { data: loadData(), plans: loadPlans(), settings: loadSettings() };
+  }
+  const init = initialRef.current;
+  const s = init.settings;
+
+  const [rawRecords, setRawRecords] = useState<ConsumptionRecord[]>(init.data?.records ?? []);
+  const [intervalMinutes, setIntervalMinutes] = useState(init.data?.intervalMinutes ?? 60);
+  const [fileName, setFileName] = useState<string | undefined>(init.data?.fileName);
+  const [plans, setPlans] = useState<TariffPlan[]>(
+    init.plans && init.plans.length > 0 ? init.plans : defaultPlans(),
+  );
+  const [basePrice, setBasePriceState] = useState(s?.basePrice ?? DEFAULT_BASE_PRICE);
+  const [darkMode, setDarkMode] = useState(s?.darkMode ?? false);
+  const [language, setLanguageState] = useState<Language>(
+    s?.language === 'he' || s?.language === 'en' ? s.language : 'en',
+  );
+  const [timeBoundaries, setTimeBoundariesState] = useState<TimeBoundaries>(
+    s && typeof s.dayStartHour === 'number' && typeof s.eveningStartHour === 'number' && typeof s.nightStartHour === 'number'
+      ? { dayStart: s.dayStartHour, eveningStart: s.eveningStartHour, nightStart: s.nightStartHour }
+      : DEFAULT_TIME_BOUNDARIES,
+  );
+  const [includeBundlePlans, setIncludeBundlePlansState] = useState(
+    typeof s?.includeBundlePlans === 'boolean' ? s.includeBundlePlans : true,
+  );
   const [dateRange, setDateRangeState] = useState<[Dayjs | null, Dayjs | null]>([null, null]);
   const [filterMode, setFilterModeState] = useState<FilterMode>('all');
-  const [hydrated, setHydrated] = useState(false);
 
-  // --- Hydrate from localStorage once. ---
+  // Skip persisting on the very first render (values just came from storage).
+  const firstRun = useRef(true);
+
+  // --- Persist configuration when it changes (not on the initial load). ---
   useEffect(() => {
-    const storedData = loadData();
-    if (storedData) {
-      setRawRecords(storedData.records);
-      setIntervalMinutes(storedData.intervalMinutes);
-      setFileName(storedData.fileName);
-    }
-    const storedPlans = loadPlans();
-    setPlans(storedPlans && storedPlans.length > 0 ? storedPlans : defaultPlans());
-    const storedSettings = loadSettings();
-    if (storedSettings) {
-      setBasePriceState(storedSettings.basePrice);
-      setDarkMode(storedSettings.darkMode);
-      if (typeof storedSettings.includeBundlePlans === 'boolean') {
-        setIncludeBundlePlansState(storedSettings.includeBundlePlans);
-      }
-      if (
-        typeof storedSettings.dayStartHour === 'number' &&
-        typeof storedSettings.eveningStartHour === 'number' &&
-        typeof storedSettings.nightStartHour === 'number'
-      ) {
-        setTimeBoundariesState({
-          dayStart: storedSettings.dayStartHour,
-          eveningStart: storedSettings.eveningStartHour,
-          nightStart: storedSettings.nightStartHour,
-        });
-      }
-    }
-    setHydrated(true);
+    if (firstRun.current) return;
+    savePlans(plans);
+  }, [plans]);
+  useEffect(() => {
+    if (firstRun.current) return;
+    saveSettings({
+      basePrice,
+      darkMode,
+      language,
+      dayStartHour: timeBoundaries.dayStart,
+      eveningStartHour: timeBoundaries.eveningStart,
+      nightStartHour: timeBoundaries.nightStart,
+      includeBundlePlans,
+    });
+  }, [basePrice, darkMode, language, timeBoundaries, includeBundlePlans]);
+  // Flip the flag AFTER the persist effects have run once on mount.
+  useEffect(() => {
+    firstRun.current = false;
   }, []);
-
-  // --- Persist configuration. ---
-  useEffect(() => {
-    if (hydrated) savePlans(plans);
-  }, [plans, hydrated]);
-  useEffect(() => {
-    if (hydrated) {
-      saveSettings({
-        basePrice,
-        darkMode,
-        dayStartHour: timeBoundaries.dayStart,
-        eveningStartHour: timeBoundaries.eveningStart,
-        nightStartHour: timeBoundaries.nightStart,
-        includeBundlePlans,
-      });
-    }
-  }, [basePrice, darkMode, timeBoundaries, includeBundlePlans, hydrated]);
 
   // --- Derived: enriched records (memoized on raw data). ---
   const allRecords = useMemo(() => enrichRecords(rawRecords), [rawRecords]);
@@ -157,10 +165,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [records, intervalMinutes],
   );
 
-  // Plans actually considered: bundle-only plans are dropped when the toggle is off.
+  // Plans actually considered: default-plan i18n keys are resolved to the active
+  // language so the comparison shows localised names, and bundle-only plans are
+  // dropped when the toggle is off.
+  const resolvedPlans = useMemo(
+    () => {
+      const tt = i18n.getFixedT(language);
+      return plans.map((p) => resolvePlan(p, tt));
+    },
+    [plans, language, i18n],
+  );
   const activePlans = useMemo(
-    () => (includeBundlePlans ? plans : plans.filter((p) => !p.bundleOnly)),
-    [plans, includeBundlePlans],
+    () => (includeBundlePlans ? resolvedPlans : resolvedPlans.filter((p) => !p.bundleOnly)),
+    [resolvedPlans, includeBundlePlans],
   );
 
   const comparison = useMemo<ComparisonResult | null>(() => {
@@ -191,6 +208,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     plans,
     basePrice,
     darkMode,
+    language,
     timeBoundaries,
     includeBundlePlans,
     dateRange,
@@ -204,6 +222,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     clearData,
     setBasePrice: setBasePriceState,
     toggleDarkMode: () => setDarkMode((d) => !d),
+    setLanguage: setLanguageState,
     setTimeBoundaries: setTimeBoundariesState,
     setIncludeBundlePlans: setIncludeBundlePlansState,
     setDateRange: setDateRangeState,

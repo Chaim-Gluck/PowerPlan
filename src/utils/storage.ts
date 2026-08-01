@@ -16,6 +16,8 @@ const KEYS = {
 export interface StoredSettings {
   basePrice: number;
   darkMode: boolean;
+  /** Active UI language code ('en' | 'he'). */
+  language?: string;
   /** Hour (0–23) at which "day" begins. */
   dayStartHour: number;
   /** Hour (0–23) at which "evening" begins. */

@@ -56,6 +56,7 @@ export default function MonthlyPlanChart({ comparison, height = 320, metric = 'c
   };
 
   return (
+    <div dir="ltr">
     <ResponsiveContainer width="100%" height={height}>
       {metric === 'cost' ? (
         <BarChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 8 }}>
@@ -81,6 +82,7 @@ export default function MonthlyPlanChart({ comparison, height = 320, metric = 'c
         </LineChart>
       )}
     </ResponsiveContainer>
+    </div>
   );
 }
 
