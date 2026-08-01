@@ -100,6 +100,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (tab: string) =>
                     percent: formatPercent(cheapest.savingsPercent),
                     start: summary.startDate, end: summary.endDate,
                     monthly: formatNIS(cheapest.averageMonthlyCost),
+                    monthlySavings: formatNIS(cheapest.savings / Math.max(comparison.monthCount, 1)),
                   })}
                 </Typography>
               </Box>

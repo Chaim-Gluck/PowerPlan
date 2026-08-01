@@ -72,7 +72,7 @@
     },
     "banner": {
       "title": "🏆 {{plan}} is your best match",
-      "body": "Saves {{savings}} ({{percent}}) over {{start}}–{{end}}, about {{monthly}}/month.",
+      "body": "Saves {{savings}} ({{percent}}) over {{start}}–{{end}} — about {{monthlySavings}}/month saved ({{monthly}}/month bill).",
       "cta": "See full comparison"
     },
     "charts": {
@@ -146,6 +146,10 @@
   "plans": {
     "title": "Tariff plans",
     "showBundle": "Show bundle-only",
+    "filterBySupplier": "Suppliers:",
+    "otherSupplier": "Other",
+    "showAllSuppliers": "Show all",
+    "noSuppliersSelected": "No suppliers selected — pick at least one supplier above to see plans.",
     "reset": "Reset",
     "resetTip": "Reset to the built-in default plans (loads the current supplier plans)",
     "newPlan": "New plan",
@@ -172,6 +176,7 @@
       "savingsVsBase": "Savings vs base",
       "savingsPercent": "Savings %",
       "avgMonthly": "Avg monthly",
+      "avgMonthlySavings": "Avg monthly savings",
       "estYearly": "Est. yearly",
       "iecBaseline": "IEC — full tariff",
       "iecBaselineSub": " (stay with the default supplier, no discount)",
@@ -254,7 +259,10 @@
       "electra": "Electra Power",
       "cellcom": "Cellcom Energy",
       "amisragas": "Amisragas",
-      "pazgas": "Pazgas"
+      "pazgas": "Pazgas",
+      "bezeq": "Bezeq Energy",
+      "partner": "Partner",
+      "hot": "HOT Energy"
     },
     "anytime": { "name": "Anytime 6.5%", "desc": "Fixed 6.5% discount, 24/7, any meter." },
     "electraDay": { "name": "Day 21%", "desc": "21% off Sun–Thu 07:00–17:00 (smart meter required)." },
@@ -267,6 +275,14 @@
     "amisragasGas": { "name": "Gas-customer 7%", "desc": "Fixed 7% discount, 24/7 — requires an Amisragas gas subscription (bundle deal)." },
     "pazgasFixed": { "name": "Fixed 5%", "desc": "Fixed 5% discount, 24/7 (5–7% depending on the current joining promo). Optional 10% Yellow-app cashback instead." },
     "pazgasDay": { "name": "Day 15%", "desc": "15% off Sun–Thu 07:00–17:00 (smart meter required)." },
-    "pazgasNight": { "name": "Night 20%", "desc": "20% off every day 23:00–07:00 (smart meter required)." }
+    "pazgasNight": { "name": "Night 20%", "desc": "20% off every day 23:00–07:00 (smart meter required)." },
+    "bezeqFixed": { "name": "Fixed 6%", "desc": "Fixed 6% discount, 24/7, any meter." },
+    "bezeqDay": { "name": "Day 15%", "desc": "15% off Sun–Thu 07:00–17:00 (smart meter required)." },
+    "bezeqNight": { "name": "Night 20%", "desc": "20% off Sun–Thu 23:00–07:00 (smart meter required)." },
+    "partnerFixed": { "name": "Fixed 5%", "desc": "Fixed 5% discount, 24/7 (rises to 6–7% in later years)." },
+    "partnerDay": { "name": "Day 15%", "desc": "15% off Sun–Thu 07:00–17:00 (smart meter required)." },
+    "partnerNight": { "name": "Night 20%", "desc": "20% off Sun–Thu 23:00–07:00 (smart meter required)." },
+    "hotDay": { "name": "Day 15%", "desc": "15% off Sun–Thu 07:00–17:00 (smart meter required)." },
+    "hotNight": { "name": "Night 20%", "desc": "20% off Sun–Thu 23:00–07:00 (smart meter required)." }
   }
 }

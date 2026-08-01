@@ -20,6 +20,7 @@ export function exportComparisonExcel(result: ComparisonResult): void {
     'Savings vs Base (₪)': round2(c.savings),
     'Savings %': round2(c.savingsPercent),
     'Avg Monthly (₪)': round2(c.averageMonthlyCost),
+    'Avg Monthly Savings (₪)': round2(c.savings / Math.max(result.monthCount, 1)),
     'Est. Yearly (₪)': round2(c.estimatedYearlyCost),
     Cheapest: c.isCheapest ? 'YES' : '',
   }));
@@ -64,6 +65,7 @@ export function exportComparisonPdf(result: ComparisonResult): void {
       'Savings (NIS)',
       'Savings %',
       'Avg/mo (NIS)',
+      'Avg Save/mo (NIS)',
       'Est./yr (NIS)',
     ]],
     body: result.comparisons.map((c) => [
@@ -73,6 +75,7 @@ export function exportComparisonPdf(result: ComparisonResult): void {
       num(c.savings),
       formatPercent(c.savingsPercent),
       num(c.averageMonthlyCost),
+      num(c.savings / Math.max(result.monthCount, 1)),
       num(c.estimatedYearlyCost),
     ]),
     styles: { fontSize: 9 },

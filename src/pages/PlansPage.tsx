@@ -4,6 +4,7 @@ import {
   Chip, Divider, Tooltip, FormControlLabel, Switch, Alert,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import CheckIcon from '@mui/icons-material/Check';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -24,6 +25,7 @@ export default function PlansPage() {
   const { plans, addPlan, updatePlan, deletePlan, resetPlans, comparison, includeBundlePlans, setIncludeBundlePlans } = useApp();
   const [editing, setEditing] = useState<TariffPlan | null>(null);
   const [open, setOpen] = useState(false);
+  const [hiddenSuppliers, setHiddenSuppliers] = useState<Set<string>>(new Set());
 
   const openNew = () => { setEditing(null); setOpen(true); };
   const openEdit = (plan: TariffPlan) => {
@@ -58,7 +60,27 @@ export default function PlansPage() {
 
   const costById = new Map(comparison?.comparisons.map((c) => [c.planId, c]) ?? []);
   const bundleCount = plans.filter((p) => p.bundleOnly).length;
-  const visiblePlans = includeBundlePlans ? plans : plans.filter((p) => !p.bundleOnly);
+  const bundleFiltered = includeBundlePlans ? plans : plans.filter((p) => !p.bundleOnly);
+
+  // Distinct supplier list (order preserved) for the supplier filter. Custom plans
+  // without a supplier are grouped under a synthetic "__none__" entry.
+  const supplierIdOf = (p: TariffPlan) => p.supplierKey ?? p.supplier ?? '__none__';
+  const supplierLabelOf = (p: TariffPlan) =>
+    (p.supplierKey ? t(p.supplierKey) : p.supplier) || t('plans.otherSupplier');
+  const suppliers: { id: string; label: string }[] = [];
+  const seenSuppliers = new Set<string>();
+  for (const p of bundleFiltered) {
+    const id = supplierIdOf(p);
+    if (!seenSuppliers.has(id)) { seenSuppliers.add(id); suppliers.push({ id, label: supplierLabelOf(p) }); }
+  }
+  const toggleSupplier = (id: string) => setHiddenSuppliers((prev) => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  const allSuppliersShown = hiddenSuppliers.size === 0;
+
+  const visiblePlans = bundleFiltered.filter((p) => !hiddenSuppliers.has(supplierIdOf(p)));
 
   return (
     <Stack spacing={3}>
@@ -77,12 +99,39 @@ export default function PlansPage() {
         </Stack>
       </Stack>
 
+      {suppliers.length > 1 && (
+        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+          <Typography variant="body2" color="text.secondary" sx={{ mr: 0.5 }}>{t('plans.filterBySupplier')}</Typography>
+          {suppliers.map((s) => {
+            const shown = !hiddenSuppliers.has(s.id);
+            return (
+              <Chip
+                key={s.id}
+                label={s.label}
+                clickable
+                onClick={() => toggleSupplier(s.id)}
+                color={shown ? 'primary' : 'default'}
+                variant={shown ? 'filled' : 'outlined'}
+                icon={shown ? <CheckIcon /> : undefined}
+              />
+            );
+          })}
+          {!allSuppliersShown && (
+            <Button size="small" onClick={() => setHiddenSuppliers(new Set())}>{t('plans.showAllSuppliers')}</Button>
+          )}
+        </Stack>
+      )}
+
       {bundleCount > 0 && (
         <Alert severity={includeBundlePlans ? 'info' : 'warning'} icon={<LinkIcon />}>
           {includeBundlePlans
             ? t('plans.bundleIncluded', { count: bundleCount })
             : t('plans.bundleHidden', { count: bundleCount })}
         </Alert>
+      )}
+
+      {bundleFiltered.length > 0 && visiblePlans.length === 0 && (
+        <Alert severity="info">{t('plans.noSuppliersSelected')}</Alert>
       )}
 
       <Box sx={gridPlans}>

@@ -20,6 +20,9 @@ const COLORS = {
   cellcom: '#7b1fa2',
   amisragas: '#2e7d32',
   pazgas: '#ed6c02',
+  bezeq: '#00838f',
+  partner: '#558b2f',
+  hot: '#c2185b',
 } as const;
 
 let seq = 0;
@@ -112,6 +115,20 @@ export function defaultPlans(): TariffPlan[] {
     flatPlan({ slug: 'pazgasFixed', supplierSlug: 'pazgas', name: 'Fixed 5%', supplier: 'Pazgas', description: 'Fixed 5% discount, 24/7 (5–7% depending on the current joining promo). Optional 10% Yellow-app cashback instead.', percent: 5 }),
     windowPlan({ slug: 'pazgasDay', supplierSlug: 'pazgas', name: 'Day 15%', supplier: 'Pazgas', description: '15% off Sun–Thu 07:00–17:00 (smart meter required).', percent: 15 }, WORK_WEEK, '07:00', '17:00'),
     windowPlan({ slug: 'pazgasNight', supplierSlug: 'pazgas', name: 'Night 20%', supplier: 'Pazgas', description: '20% off every day 23:00–07:00 (smart meter required).', percent: 20 }, ALL_DAYS, '23:00', '07:00'),
+
+    // ---- Bezeq Energy (בזק אנרג'י) ----
+    flatPlan({ slug: 'bezeqFixed', supplierSlug: 'bezeq', name: 'Fixed 6%', supplier: 'Bezeq Energy', description: 'Fixed 6% discount, 24/7, any meter.', percent: 6 }),
+    windowPlan({ slug: 'bezeqDay', supplierSlug: 'bezeq', name: 'Day 15%', supplier: 'Bezeq Energy', description: '15% off Sun–Thu 07:00–17:00 (smart meter required).', percent: 15 }, WORK_WEEK, '07:00', '17:00'),
+    windowPlan({ slug: 'bezeqNight', supplierSlug: 'bezeq', name: 'Night 20%', supplier: 'Bezeq Energy', description: '20% off Sun–Thu 23:00–07:00 (smart meter required).', percent: 20 }, WORK_WEEK, '23:00', '07:00'),
+
+    // ---- Partner (פרטנר) ----
+    flatPlan({ slug: 'partnerFixed', supplierSlug: 'partner', name: 'Fixed 5%', supplier: 'Partner', description: 'Fixed 5% discount, 24/7 (rises to 6–7% in later years).', percent: 5 }),
+    windowPlan({ slug: 'partnerDay', supplierSlug: 'partner', name: 'Day 15%', supplier: 'Partner', description: '15% off Sun–Thu 07:00–17:00 (smart meter required).', percent: 15 }, WORK_WEEK, '07:00', '17:00'),
+    windowPlan({ slug: 'partnerNight', supplierSlug: 'partner', name: 'Night 20%', supplier: 'Partner', description: '20% off Sun–Thu 23:00–07:00 (smart meter required).', percent: 20 }, WORK_WEEK, '23:00', '07:00'),
+
+    // ---- HOT Energy (HOT אנרג'י) — no fixed 24/7 track confirmed ----
+    windowPlan({ slug: 'hotDay', supplierSlug: 'hot', name: 'Day 15%', supplier: 'HOT Energy', description: '15% off Sun–Thu 07:00–17:00 (smart meter required).', percent: 15 }, WORK_WEEK, '07:00', '17:00'),
+    windowPlan({ slug: 'hotNight', supplierSlug: 'hot', name: 'Night 20%', supplier: 'HOT Energy', description: '20% off Sun–Thu 23:00–07:00 (smart meter required).', percent: 20 }, WORK_WEEK, '23:00', '07:00'),
   ];
 }
 
