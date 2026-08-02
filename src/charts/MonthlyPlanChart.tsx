@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ResponsiveContainer, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { useTheme } from '@mui/material/styles';
 import dayjs from 'dayjs';
@@ -19,6 +20,29 @@ export default function MonthlyPlanChart({ comparison, height = 320, metric = 'c
   const theme = useTheme();
   const grid = theme.palette.divider;
   const axis = theme.palette.text.secondary;
+
+  // Series the user has hidden by clicking the legend (keyed by plan name, which
+  // is the chart dataKey). Toggling just flips Recharts' `hide` on each series.
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const toggleSeries = (key: string) => setHidden((prev) => {
+    const next = new Set(prev);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    return next;
+  });
+  const legendProps = {
+    onClick: (e: { dataKey?: unknown; value?: unknown }) => toggleSeries(String(e.dataKey ?? e.value)),
+    formatter: (value: string) => (
+      <span
+        style={{
+          color: hidden.has(value) ? theme.palette.text.disabled : theme.palette.text.primary,
+          textDecoration: hidden.has(value) ? 'line-through' : 'none',
+        }}
+      >
+        {value}
+      </span>
+    ),
+    wrapperStyle: { cursor: 'pointer' },
+  };
 
   // Union of all month keys, sorted.
   const months = Array.from(
@@ -64,9 +88,9 @@ export default function MonthlyPlanChart({ comparison, height = 320, metric = 'c
           <XAxis {...xAxisProps} />
           <YAxis tick={{ fill: axis, fontSize: 12 }} width={52} />
           <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `₪${v}`} labelFormatter={monthTick} cursor={{ fill: theme.palette.action.hover }} />
-          <Legend />
+          <Legend {...legendProps} />
           {comparison.comparisons.map((c, i) => (
-            <Bar key={c.planId} dataKey={c.planName} fill={c.color ?? SERIES_COLORS[i % SERIES_COLORS.length]} radius={[3, 3, 0, 0]} />
+            <Bar key={c.planId} dataKey={c.planName} hide={hidden.has(c.planName)} fill={c.color ?? SERIES_COLORS[i % SERIES_COLORS.length]} radius={[3, 3, 0, 0]} />
           ))}
         </BarChart>
       ) : (
@@ -75,9 +99,9 @@ export default function MonthlyPlanChart({ comparison, height = 320, metric = 'c
           <XAxis {...xAxisProps} />
           <YAxis tick={{ fill: axis, fontSize: 12 }} width={52} />
           <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `₪${v}`} labelFormatter={monthTick} />
-          <Legend />
+          <Legend {...legendProps} />
           {comparison.comparisons.map((c, i) => (
-            <Line key={c.planId} type="monotone" dataKey={c.planName} stroke={c.color ?? SERIES_COLORS[i % SERIES_COLORS.length]} strokeWidth={2} dot={false} />
+            <Line key={c.planId} type="monotone" dataKey={c.planName} hide={hidden.has(c.planName)} stroke={c.color ?? SERIES_COLORS[i % SERIES_COLORS.length]} strokeWidth={2} dot={false} />
           ))}
         </LineChart>
       )}

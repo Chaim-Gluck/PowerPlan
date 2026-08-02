@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import {
   Box, Typography, Stack, Button, Card, CardContent, CardActions, IconButton,
-  Chip, Divider, Tooltip, FormControlLabel, Switch, Alert,
+  Chip, Divider, Tooltip, FormControlLabel, Switch, Alert, Popover, Badge,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CheckIcon from '@mui/icons-material/Check';
+import FilterListIcon from '@mui/icons-material/FilterList';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -26,6 +27,7 @@ export default function PlansPage() {
   const [editing, setEditing] = useState<TariffPlan | null>(null);
   const [open, setOpen] = useState(false);
   const [hiddenSuppliers, setHiddenSuppliers] = useState<Set<string>>(new Set());
+  const [filterAnchor, setFilterAnchor] = useState<HTMLElement | null>(null);
 
   const openNew = () => { setEditing(null); setOpen(true); };
   const openEdit = (plan: TariffPlan) => {
@@ -79,6 +81,15 @@ export default function PlansPage() {
     return next;
   });
   const allSuppliersShown = hiddenSuppliers.size === 0;
+  const showAllSuppliers = () => setHiddenSuppliers(new Set());
+  const hideAllSuppliers = () => setHiddenSuppliers(new Set(suppliers.map((s) => s.id)));
+
+  // A filter is "active" whenever bundle plans are hidden or any supplier is
+  // unchecked. The badge/summary use this count and Reset clears everything.
+  const bundleFilterActive = bundleCount > 0 && !includeBundlePlans;
+  const activeFilterCount = hiddenSuppliers.size + (bundleFilterActive ? 1 : 0);
+  const anyFilterApplied = activeFilterCount > 0;
+  const resetFilters = () => { setHiddenSuppliers(new Set()); setIncludeBundlePlans(true); };
 
   const visiblePlans = bundleFiltered.filter((p) => !hiddenSuppliers.has(supplierIdOf(p)));
 
@@ -87,11 +98,15 @@ export default function PlansPage() {
       <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={2}>
         <Typography variant="h4">{t('plans.title')}</Typography>
         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-          <FormControlLabel
-            sx={{ mr: 1 }}
-            control={<Switch checked={includeBundlePlans} onChange={(e) => setIncludeBundlePlans(e.target.checked)} />}
-            label={t('plans.showBundle')}
-          />
+          <Badge badgeContent={activeFilterCount} color="primary" overlap="rectangular">
+            <Button
+              variant="outlined"
+              startIcon={<FilterListIcon />}
+              onClick={(e) => setFilterAnchor(e.currentTarget)}
+            >
+              {t('plans.filters')}
+            </Button>
+          </Badge>
           <Tooltip title={t('plans.resetTip')}>
             <Button color="inherit" startIcon={<RestartAltIcon />} onClick={resetPlans}>{t('plans.reset')}</Button>
           </Tooltip>
@@ -99,40 +114,86 @@ export default function PlansPage() {
         </Stack>
       </Stack>
 
-      {suppliers.length > 1 && (
-        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-          <Typography variant="body2" color="text.secondary" sx={{ mr: 0.5 }}>{t('plans.filterBySupplier')}</Typography>
-          {suppliers.map((s) => {
-            const shown = !hiddenSuppliers.has(s.id);
-            return (
-              <Chip
-                key={s.id}
-                label={s.label}
-                clickable
-                onClick={() => toggleSupplier(s.id)}
-                color={shown ? 'primary' : 'default'}
-                variant={shown ? 'filled' : 'outlined'}
-                icon={shown ? <CheckIcon /> : undefined}
-              />
-            );
-          })}
-          {!allSuppliersShown && (
-            <Button size="small" onClick={() => setHiddenSuppliers(new Set())}>{t('plans.showAllSuppliers')}</Button>
-          )}
-        </Stack>
-      )}
-
-      {bundleCount > 0 && (
-        <Alert severity={includeBundlePlans ? 'info' : 'warning'} icon={<LinkIcon />}>
-          {includeBundlePlans
-            ? t('plans.bundleIncluded', { count: bundleCount })
-            : t('plans.bundleHidden', { count: bundleCount })}
+      {/* Slim "filters applied" notice — no details, just a way in and a reset. */}
+      {anyFilterApplied && (
+        <Alert
+          severity="info"
+          icon={<FilterListIcon fontSize="inherit" />}
+          action={<Button color="inherit" size="small" onClick={resetFilters}>{t('plans.resetFilters')}</Button>}
+        >
+          {t('plans.filtersApplied')}
         </Alert>
       )}
 
       {bundleFiltered.length > 0 && visiblePlans.length === 0 && (
         <Alert severity="info">{t('plans.noSuppliersSelected')}</Alert>
       )}
+
+      {/* Filters popover: bundle-only, supplier checkboxes, and reset. */}
+      <Popover
+        open={Boolean(filterAnchor)}
+        anchorEl={filterAnchor}
+        onClose={() => setFilterAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Box sx={{ p: 2, width: { xs: 280, sm: 340 } }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+            <Typography variant="subtitle1" fontWeight={700}>{t('plans.filters')}</Typography>
+            <Typography variant="caption" color="text.secondary">
+              {anyFilterApplied ? t('plans.filtersActiveCount', { count: activeFilterCount }) : t('plans.noFiltersActive')}
+            </Typography>
+          </Stack>
+
+          {bundleCount > 0 && (
+            <>
+              <FormControlLabel
+                control={<Switch checked={includeBundlePlans} onChange={(e) => setIncludeBundlePlans(e.target.checked)} />}
+                label={t('plans.showBundle')}
+              />
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                {includeBundlePlans
+                  ? t('plans.bundleIncluded', { count: bundleCount })
+                  : t('plans.bundleHidden', { count: bundleCount })}
+              </Typography>
+              <Divider sx={{ my: 1.5 }} />
+            </>
+          )}
+
+          {suppliers.length > 1 && (
+            <>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                <Typography variant="body2" color="text.secondary">{t('plans.filterBySupplier')}</Typography>
+                <Stack direction="row" spacing={0.5}>
+                  <Button size="small" onClick={showAllSuppliers} disabled={allSuppliersShown}>{t('plans.showAllSuppliers')}</Button>
+                  <Button size="small" onClick={hideAllSuppliers} disabled={hiddenSuppliers.size === suppliers.length}>{t('plans.hideAllSuppliers')}</Button>
+                </Stack>
+              </Stack>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {suppliers.map((s) => {
+                  const shown = !hiddenSuppliers.has(s.id);
+                  return (
+                    <Chip
+                      key={s.id}
+                      label={s.label}
+                      clickable
+                      onClick={() => toggleSupplier(s.id)}
+                      color={shown ? 'primary' : 'default'}
+                      variant={shown ? 'filled' : 'outlined'}
+                      icon={shown ? <CheckIcon /> : undefined}
+                    />
+                  );
+                })}
+              </Box>
+            </>
+          )}
+
+          <Divider sx={{ my: 1.5 }} />
+          <Button fullWidth startIcon={<RestartAltIcon />} onClick={resetFilters} disabled={!anyFilterApplied}>
+            {t('plans.resetFilters')}
+          </Button>
+        </Box>
+      </Popover>
 
       <Box sx={gridPlans}>
         {visiblePlans.map((plan) => {

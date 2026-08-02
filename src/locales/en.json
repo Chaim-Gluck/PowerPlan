@@ -11,6 +11,10 @@
     "lightMode": "Light mode",
     "settings": "Settings"
   },
+  "app": {
+    "footerPrivacy": "PowerPlan runs entirely in your browser · No data is sent to any server",
+    "builtBy": "Built by"
+  },
   "common": {
     "records": "{{count}} records",
     "months": "{{count}} months",
@@ -103,6 +107,7 @@
     "title": "Import electricity data",
     "dropTitle": "Drop your CSV or Excel file here",
     "dropSub": "Supports the IEC meter export (meter_LP_…csv) and generic Timestamp + Consumption files. Hourly, half-hour and quarter-hour intervals are detected automatically.",
+    "privacy": "Your data never leaves your device — the file is read and all calculations run locally in your browser. Nothing is uploaded.",
     "chooseFile": "Choose file",
     "loadSample": "Load sample data",
     "noRecords": "No records found in the file.",
@@ -146,9 +151,15 @@
   "plans": {
     "title": "Tariff plans",
     "showBundle": "Show bundle-only",
+    "filters": "Filters",
+    "filtersApplied": "Some filters are applied. Open Filters to view, edit, or reset.",
+    "filtersActiveCount": "{{count}} active",
+    "noFiltersActive": "No filters active",
+    "resetFilters": "Reset filters",
     "filterBySupplier": "Suppliers:",
     "otherSupplier": "Other",
     "showAllSuppliers": "Show all",
+    "hideAllSuppliers": "Hide all",
     "noSuppliersSelected": "No suppliers selected — pick at least one supplier above to see plans.",
     "reset": "Reset",
     "resetTip": "Reset to the built-in default plans (loads the current supplier plans)",

@@ -10,6 +10,7 @@ import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../state/AppContext';
 import { importFile, importCsvText, type ImportResult } from '../utils/dataImport';
@@ -111,6 +112,10 @@ export default function ImportPage() {
 
       {busy && <LinearProgress />}
       {error && <Alert severity="error">{error}</Alert>}
+
+      <Alert severity="success" icon={<LockOutlinedIcon fontSize="inherit" />} variant="outlined">
+        {t('import.privacy')}
+      </Alert>
 
       {lastResult && lastResult.warnings.map((w, i) => (
         <Alert key={i} severity="info">{w}</Alert>

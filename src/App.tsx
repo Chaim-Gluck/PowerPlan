@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactElement } from 'react';
 import {
   AppBar, Toolbar, Typography, Box, Tabs, Tab, IconButton, Container, CssBaseline, Tooltip,
-  useMediaQuery, Paper, BottomNavigation, BottomNavigationAction,
+  useMediaQuery, Paper, BottomNavigation, BottomNavigationAction, Link,
 } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import { CacheProvider } from '@emotion/react';
@@ -104,6 +104,16 @@ export default function App() {
               {tab === 'plans' && <PlansPage />}
               {tab === 'comparison' && <ComparisonPage />}
               {tab === 'insights' && <InsightsPage />}
+
+              <Box component="footer" sx={{ mt: 4, pt: 2, borderTop: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
+                <Typography variant="caption" color="text.secondary" display="block">{t('app.footerPrivacy')}</Typography>
+                <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                  PowerPlan · {t('app.builtBy')}{' '}
+                  <Link href="https://github.com/Chaim-Gluck/PowerPlan" target="_blank" rel="noopener" color="inherit" underline="hover">
+                    Chaim Gluck
+                  </Link>{' '}© 2026
+                </Typography>
+              </Box>
             </Container>
 
             {isMobile && (
