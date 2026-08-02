@@ -30,19 +30,30 @@ export default function MonthlyPlanChart({ comparison, height = 320, metric = 'c
     return next;
   });
   const legendProps = {
-    onClick: (e: { dataKey?: unknown; value?: unknown }) => toggleSeries(String(e.dataKey ?? e.value)),
-    formatter: (value: string) => (
-      <span
-        style={{
-          color: hidden.has(value) ? theme.palette.text.disabled : theme.palette.text.primary,
-          textDecoration: hidden.has(value) ? 'line-through' : 'none',
-        }}
-      >
-        {value}
-      </span>
-    ),
+    onClick: (e: { dataKey?: unknown; value?: unknown }) =>
+      toggleSeries(String(e.dataKey ?? labelToId.get(String(e.value)) ?? e.value)),
+    formatter: (value: string) => {
+      const id = labelToId.get(value) ?? value;
+      return (
+        <span
+          style={{
+            color: hidden.has(id) ? theme.palette.text.disabled : theme.palette.text.primary,
+            textDecoration: hidden.has(id) ? 'line-through' : 'none',
+          }}
+        >
+          {value}
+        </span>
+      );
+    },
     wrapperStyle: { cursor: 'pointer' },
   };
+
+  // Display label — includes the supplier so plans that share a name (e.g. two
+  // "Day 15%" tracks from different suppliers) stay distinguishable.
+  const seriesLabel = (c: { planName: string; supplier?: string }) =>
+    c.supplier ? `${c.planName} (${c.supplier})` : c.planName;
+  // Map the visible label back to the unique planId (the series' hidden key).
+  const labelToId = new Map(comparison.comparisons.map((c) => [seriesLabel(c), c.planId]));
 
   // Union of all month keys, sorted.
   const months = Array.from(
@@ -56,7 +67,8 @@ export default function MonthlyPlanChart({ comparison, height = 320, metric = 'c
     const row: Record<string, number | string> = { name: m };
     for (const c of comparison.comparisons) {
       const cost = c.monthlyCosts[m] ?? 0;
-      row[c.planName] = metric === 'cost' ? round2(cost) : round2((baseByMonth[m] ?? cost) - cost);
+      // Key rows by the unique planId (not the name) so same-named plans don't collide.
+      row[c.planId] = metric === 'cost' ? round2(cost) : round2((baseByMonth[m] ?? cost) - cost);
     }
     return row;
   });
@@ -90,7 +102,7 @@ export default function MonthlyPlanChart({ comparison, height = 320, metric = 'c
           <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `₪${v}`} labelFormatter={monthTick} cursor={{ fill: theme.palette.action.hover }} />
           <Legend {...legendProps} />
           {comparison.comparisons.map((c, i) => (
-            <Bar key={c.planId} dataKey={c.planName} hide={hidden.has(c.planName)} fill={c.color ?? SERIES_COLORS[i % SERIES_COLORS.length]} radius={[3, 3, 0, 0]} />
+            <Bar key={c.planId} dataKey={c.planId} name={seriesLabel(c)} hide={hidden.has(c.planId)} fill={c.color ?? SERIES_COLORS[i % SERIES_COLORS.length]} radius={[3, 3, 0, 0]} />
           ))}
         </BarChart>
       ) : (
@@ -101,7 +113,7 @@ export default function MonthlyPlanChart({ comparison, height = 320, metric = 'c
           <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => `₪${v}`} labelFormatter={monthTick} />
           <Legend {...legendProps} />
           {comparison.comparisons.map((c, i) => (
-            <Line key={c.planId} type="monotone" dataKey={c.planName} hide={hidden.has(c.planName)} stroke={c.color ?? SERIES_COLORS[i % SERIES_COLORS.length]} strokeWidth={2} dot={false} />
+            <Line key={c.planId} type="monotone" dataKey={c.planId} name={seriesLabel(c)} hide={hidden.has(c.planId)} stroke={c.color ?? SERIES_COLORS[i % SERIES_COLORS.length]} strokeWidth={2} dot={false} />
           ))}
         </LineChart>
       )}

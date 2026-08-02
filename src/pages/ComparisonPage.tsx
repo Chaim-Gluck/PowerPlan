@@ -74,7 +74,7 @@ export default function ComparisonPage() {
               <TableCell align="right" sx={hideSm}>{t('comparison.table.savingsVsBase')}</TableCell>
               <TableCell align="right">{t('comparison.table.savingsPercent')}</TableCell>
               <TableCell align="right" sx={hideSm}>{t('comparison.table.avgMonthly')}</TableCell>
-              <TableCell align="right" sx={hideSm}>{t('comparison.table.avgMonthlySavings')}</TableCell>
+              <TableCell align="right">{t('comparison.table.avgMonthlySavings')}</TableCell>
               <TableCell align="right" sx={hideSm}>{t('comparison.table.estYearly')}</TableCell>
             </TableRow>
           </TableHead>
@@ -86,7 +86,7 @@ export default function ComparisonPage() {
               <TableCell align="right" sx={hideSm}>{t('common.dash')}</TableCell>
               <TableCell align="right">{t('common.dash')}</TableCell>
               <TableCell align="right" sx={hideSm}>{formatNIS(comparison.baseCost / Math.max(comparison.monthCount, 1))}</TableCell>
-              <TableCell align="right" sx={hideSm}>{t('common.dash')}</TableCell>
+              <TableCell align="right">{t('common.dash')}</TableCell>
               <TableCell align="right" sx={hideSm}>{formatNIS((comparison.baseCost / Math.max(comparison.monthCount, 1)) * 12)}</TableCell>
             </TableRow>
             {comparison.comparisons.map((c) => (
@@ -120,7 +120,7 @@ export default function ComparisonPage() {
                 <TableCell align="right" sx={{ color: 'success.main', ...hideSm }}>{formatNIS(c.savings)}</TableCell>
                 <TableCell align="right">{formatPercent(c.savingsPercent)}</TableCell>
                 <TableCell align="right" sx={hideSm}>{formatNIS(c.averageMonthlyCost)}</TableCell>
-                <TableCell align="right" sx={{ color: 'success.main', ...hideSm }}>{formatNIS(c.savings / Math.max(comparison.monthCount, 1))}</TableCell>
+                <TableCell align="right" sx={{ color: 'success.main' }}>{formatNIS(c.savings / Math.max(comparison.monthCount, 1))}</TableCell>
                 <TableCell align="right" sx={hideSm}>{formatNIS(c.estimatedYearlyCost)}</TableCell>
               </TableRow>
             ))}
