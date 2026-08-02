@@ -70,7 +70,7 @@ export default function ComparisonPage() {
             <TableRow>
               <TableCell>{t('comparison.table.rank')}</TableCell>
               <TableCell>{t('comparison.table.plan')}</TableCell>
-              <TableCell align="right">{t('comparison.table.totalCost')}</TableCell>
+              <TableCell align="right" sx={hideSm}>{t('comparison.table.totalCost')}</TableCell>
               <TableCell align="right" sx={hideSm}>{t('comparison.table.savingsVsBase')}</TableCell>
               <TableCell align="right">{t('comparison.table.savingsPercent')}</TableCell>
               <TableCell align="right" sx={hideSm}>{t('comparison.table.avgMonthly')}</TableCell>
@@ -82,7 +82,7 @@ export default function ComparisonPage() {
             <TableRow sx={{ bgcolor: 'action.hover' }}>
               <TableCell>{t('common.dash')}</TableCell>
               <TableCell><b>{t('comparison.table.iecBaseline')}</b>{t('comparison.table.iecBaselineSub')}</TableCell>
-              <TableCell align="right">{formatNIS(comparison.baseCost)}</TableCell>
+              <TableCell align="right" sx={hideSm}>{formatNIS(comparison.baseCost)}</TableCell>
               <TableCell align="right" sx={hideSm}>{t('common.dash')}</TableCell>
               <TableCell align="right">{t('common.dash')}</TableCell>
               <TableCell align="right" sx={hideSm}>{formatNIS(comparison.baseCost / Math.max(comparison.monthCount, 1))}</TableCell>
@@ -116,7 +116,7 @@ export default function ComparisonPage() {
                     </Box>
                   </Stack>
                 </TableCell>
-                <TableCell align="right">{formatNIS(c.totalCost)}</TableCell>
+                <TableCell align="right" sx={hideSm}>{formatNIS(c.totalCost)}</TableCell>
                 <TableCell align="right" sx={{ color: 'success.main', ...hideSm }}>{formatNIS(c.savings)}</TableCell>
                 <TableCell align="right">{formatPercent(c.savingsPercent)}</TableCell>
                 <TableCell align="right" sx={hideSm}>{formatNIS(c.averageMonthlyCost)}</TableCell>
