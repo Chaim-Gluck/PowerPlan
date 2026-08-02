@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useMediaQuery } from '@mui/material';
 import { ResponsiveContainer, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { useTheme } from '@mui/material/styles';
 import dayjs from 'dayjs';
@@ -20,6 +21,11 @@ export default function MonthlyPlanChart({ comparison, height = 320, metric = 'c
   const theme = useTheme();
   const grid = theme.palette.divider;
   const axis = theme.palette.text.secondary;
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  // With many plans the legend can grow taller than the plot on a phone. Cap it
+  // to a scrollable strip on mobile and give the plot extra height so it's never
+  // squeezed out; desktop keeps the normal auto-height legend.
+  const chartHeight = isMobile ? Math.max(height, 360) : height;
 
   // Series the user has hidden by clicking the legend (keyed by plan name, which
   // is the chart dataKey). Toggling just flips Recharts' `hide` on each series.
@@ -45,7 +51,9 @@ export default function MonthlyPlanChart({ comparison, height = 320, metric = 'c
         </span>
       );
     },
-    wrapperStyle: { cursor: 'pointer' },
+    wrapperStyle: isMobile
+      ? { cursor: 'pointer', maxHeight: 92, overflowY: 'auto' as const, fontSize: 11 }
+      : { cursor: 'pointer' },
   };
 
   // Display label — includes the supplier so plans that share a name (e.g. two
@@ -93,7 +101,7 @@ export default function MonthlyPlanChart({ comparison, height = 320, metric = 'c
 
   return (
     <div dir="ltr">
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={chartHeight}>
       {metric === 'cost' ? (
         <BarChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={grid} />
