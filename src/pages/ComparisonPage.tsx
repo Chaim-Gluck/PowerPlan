@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import {
   Box, Typography, Stack, Button, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, Chip, MenuItem, TextField, Slider, Alert, Card, CardContent,
+  ToggleButton, ToggleButtonGroup,
 } from '@mui/material';
 import GridOnIcon from '@mui/icons-material/GridOn';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
@@ -13,7 +14,7 @@ import ChartCard from '../components/ChartCard';
 import MonthlyPlanChart from '../charts/MonthlyPlanChart';
 import DistributionPieChart from '../charts/DistributionPieChart';
 import { BillCalculator } from '../pricing';
-import { shiftConsumption, type Bucket } from '../utils/whatIf';
+import { shiftConsumption, shiftByDayType, type Bucket, type DayType } from '../utils/whatIf';
 import { exportComparisonExcel, exportComparisonPdf } from '../utils/exporters';
 import { formatNIS, formatKWh, formatPercent } from '../utils/format';
 
@@ -26,21 +27,37 @@ export default function ComparisonPage() {
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
 
   // What-if simulator state.
+  const [shiftType, setShiftType] = useState<'timeOfDay' | 'dayType'>('timeOfDay');
   const [fromBucket, setFromBucket] = useState<Bucket>('day');
   const [toBucket, setToBucket] = useState<Bucket>('night');
+  const [fromDay, setFromDay] = useState<DayType>('weekend');
+  const [toDay, setToDay] = useState<DayType>('weekday');
   const [shiftPct, setShiftPct] = useState(20);
 
   const whatIf = useMemo(() => {
-    if (records.length === 0 || shiftPct === 0 || fromBucket === toBucket) return null;
-    const shifted = shiftConsumption(records, fromBucket, toBucket, shiftPct / 100, timeBoundaries);
+    if (records.length === 0 || shiftPct === 0) return null;
+    let shifted;
+    if (shiftType === 'dayType') {
+      if (fromDay === toDay) return null;
+      shifted = shiftByDayType(records, fromDay, toDay, shiftPct / 100);
+    } else {
+      if (fromBucket === toBucket) return null;
+      shifted = shiftConsumption(records, fromBucket, toBucket, shiftPct / 100, timeBoundaries);
+    }
     return BillCalculator.compareAll(shifted, activePlans, basePrice);
-  }, [records, activePlans, basePrice, fromBucket, toBucket, shiftPct, timeBoundaries]);
+  }, [records, activePlans, basePrice, shiftType, fromBucket, toBucket, fromDay, toDay, shiftPct, timeBoundaries]);
 
   const bucketLabels: Record<Bucket, string> = {
     day: t('charts.bucket.day', { start: hh(timeBoundaries.dayStart), end: hh(timeBoundaries.eveningStart) }),
     evening: t('charts.bucket.evening', { start: hh(timeBoundaries.eveningStart), end: hh(timeBoundaries.nightStart) }),
     night: t('charts.bucket.night', { start: hh(timeBoundaries.nightStart), end: hh(timeBoundaries.dayStart) }),
   };
+  const dayLabels: Record<DayType, string> = {
+    weekday: t('filters.weekdays'),
+    weekend: t('filters.weekend'),
+  };
+  const shiftFromLabel = shiftType === 'dayType' ? dayLabels[fromDay] : bucketLabels[fromBucket];
+  const shiftToLabel = shiftType === 'dayType' ? dayLabels[toDay] : bucketLabels[toBucket];
 
   if (!comparison || records.length === 0) {
     return <Alert severity="info">{t('comparison.needData')}</Alert>;
@@ -191,38 +208,74 @@ export default function ComparisonPage() {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             {t('comparison.whatIf.intro')}
           </Typography>
+          <ToggleButtonGroup
+            size="small" exclusive value={shiftType}
+            onChange={(_, v) => v && setShiftType(v)}
+            sx={{ mb: 2 }}
+          >
+            <ToggleButton value="timeOfDay">{t('comparison.whatIf.timeOfDay')}</ToggleButton>
+            <ToggleButton value="dayType">{t('comparison.whatIf.dayType')}</ToggleButton>
+          </ToggleButtonGroup>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
-            <TextField select size="small" label={t('comparison.whatIf.shiftFrom')} value={fromBucket} onChange={(e) => setFromBucket(e.target.value as Bucket)}>
-              <MenuItem value="day">{bucketLabels.day}</MenuItem>
-              <MenuItem value="evening">{bucketLabels.evening}</MenuItem>
-              <MenuItem value="night">{bucketLabels.night}</MenuItem>
-            </TextField>
-            <TextField select size="small" label={t('comparison.whatIf.to')} value={toBucket} onChange={(e) => setToBucket(e.target.value as Bucket)}>
-              <MenuItem value="day">{bucketLabels.day}</MenuItem>
-              <MenuItem value="evening">{bucketLabels.evening}</MenuItem>
-              <MenuItem value="night">{bucketLabels.night}</MenuItem>
-            </TextField>
+            {shiftType === 'timeOfDay' ? (
+              <>
+                <TextField select size="small" label={t('comparison.whatIf.shiftFrom')} value={fromBucket} onChange={(e) => setFromBucket(e.target.value as Bucket)}>
+                  <MenuItem value="day">{bucketLabels.day}</MenuItem>
+                  <MenuItem value="evening">{bucketLabels.evening}</MenuItem>
+                  <MenuItem value="night">{bucketLabels.night}</MenuItem>
+                </TextField>
+                <TextField select size="small" label={t('comparison.whatIf.to')} value={toBucket} onChange={(e) => setToBucket(e.target.value as Bucket)}>
+                  <MenuItem value="day">{bucketLabels.day}</MenuItem>
+                  <MenuItem value="evening">{bucketLabels.evening}</MenuItem>
+                  <MenuItem value="night">{bucketLabels.night}</MenuItem>
+                </TextField>
+              </>
+            ) : (
+              <>
+                <TextField select size="small" label={t('comparison.whatIf.shiftFrom')} value={fromDay} onChange={(e) => setFromDay(e.target.value as DayType)}>
+                  <MenuItem value="weekday">{dayLabels.weekday}</MenuItem>
+                  <MenuItem value="weekend">{dayLabels.weekend}</MenuItem>
+                </TextField>
+                <TextField select size="small" label={t('comparison.whatIf.to')} value={toDay} onChange={(e) => setToDay(e.target.value as DayType)}>
+                  <MenuItem value="weekday">{dayLabels.weekday}</MenuItem>
+                  <MenuItem value="weekend">{dayLabels.weekend}</MenuItem>
+                </TextField>
+              </>
+            )}
             <Box sx={{ minWidth: 220, px: 2 }}>
               <Typography variant="caption">{t('comparison.whatIf.shiftAmount', { percent: shiftPct })}</Typography>
               <Slider value={shiftPct} onChange={(_, v) => setShiftPct(v as number)} min={0} max={100} step={5} valueLabelDisplay="auto" />
             </Box>
           </Stack>
 
-          {whatIf?.cheapest && (
-            <Alert severity="success" sx={{ mt: 2 }}>
-              {t('comparison.whatIf.result', {
-                percent: shiftPct,
-                from: bucketLabels[fromBucket],
-                to: bucketLabels[toBucket],
-                plan: whatIf.cheapest.planName,
-                cost: formatNIS(whatIf.cheapest.totalCost),
-                savings: formatPercent(whatIf.cheapest.savingsPercent),
-              })}
-              {comparison.cheapest && whatIf.cheapest.planId !== comparison.cheapest.planId
-                ? t('comparison.whatIf.changed', { plan: comparison.cheapest.planName })
-                : t('comparison.whatIf.same')}
-            </Alert>
-          )}
+          {whatIf?.cheapest && (() => {
+            // Extra monthly saving from changing usage: current best cost minus the
+            // best cost after the shift, per month. Positive = the shift helps.
+            const monthlyDelta = comparison.cheapest
+              ? (comparison.cheapest.totalCost - whatIf.cheapest.totalCost) / Math.max(comparison.monthCount, 1)
+              : 0;
+            const hasGain = monthlyDelta > 0.5;
+            return (
+              <Alert severity={hasGain ? 'success' : 'info'} sx={{ mt: 2 }}>
+                {hasGain
+                  ? t('comparison.whatIf.result', {
+                      percent: shiftPct,
+                      from: shiftFromLabel,
+                      to: shiftToLabel,
+                      plan: whatIf.cheapest.planName,
+                      monthlySaving: formatNIS(monthlyDelta),
+                    })
+                  : t('comparison.whatIf.resultNoGain', {
+                      percent: shiftPct,
+                      from: shiftFromLabel,
+                      to: shiftToLabel,
+                    })}
+                {hasGain && (comparison.cheapest && whatIf.cheapest.planId !== comparison.cheapest.planId
+                  ? t('comparison.whatIf.changed', { plan: comparison.cheapest.planName })
+                  : t('comparison.whatIf.same'))}
+              </Alert>
+            );
+          })()}
         </CardContent>
       </Card>
     </Stack>

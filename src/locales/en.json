@@ -101,7 +101,14 @@
     "allDays": "All days",
     "weekdays": "Weekdays",
     "weekend": "Weekend",
-    "reset": "Reset filters"
+    "reset": "Reset filters",
+    "preset": {
+      "3m": "3M",
+      "6m": "6M",
+      "1y": "1Y",
+      "ytd": "YTD",
+      "all": "All"
+    }
   },
   "import": {
     "title": "Import electricity data",
@@ -218,11 +225,14 @@
     },
     "whatIf": {
       "title": "What-if simulator",
-      "intro": "Shift part of your consumption between times of day and see how the optimal plan changes.",
+      "intro": "Shift part of your consumption — between times of day or between weekdays and weekends — and see how the optimal plan changes.",
+      "timeOfDay": "Time of day",
+      "dayType": "Day type",
       "shiftFrom": "Shift from",
       "to": "To",
       "shiftAmount": "Shift {{percent}}%",
-      "result": "After shifting {{percent}}% of {{from}} usage to {{to}}, the best plan would be {{plan}} at {{cost}} ({{savings}} saved).",
+      "result": "After shifting {{percent}}% of {{from}} usage to {{to}}, the best plan would be {{plan}} — about {{monthlySaving}}/month more saved than your current plan.",
+      "resultNoGain": "After shifting {{percent}}% of {{from}} usage to {{to}}, there’s no extra monthly saving over your current plan.",
       "changed": " That's a change from your current best, {{plan}}.",
       "same": " (Same plan as today.)"
     }
