@@ -10,6 +10,7 @@ import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../state/AppContext';
@@ -27,9 +28,10 @@ export default function ImportPage() {
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const guideSteps = [1, 2, 3, 4, 5].map((n) => ({
+  const guideSteps = [1, 2, 3, 4, 5, 6].map((n) => ({
     label: t(`import.guide.step${n}Label`),
     detail: t(`import.guide.step${n}Detail`),
+    note: t(`import.guide.step${n}Note`, { defaultValue: '' }),
   }));
 
   const handleFile = async (file: File) => {
@@ -132,6 +134,11 @@ export default function ImportPage() {
               {t('import.guide.openPortal')}
             </Button>
           </Box>
+          <Alert severity="warning" icon={<WarningAmberIcon />} sx={{ py: 0.5 }}>
+            <Typography variant="caption" fontWeight={700} display="block">{t('import.guide.tipTitle')}</Typography>
+            <Typography variant="caption" component="div" sx={{ mt: 0.25 }}>• {t('import.guide.tip1')}</Typography>
+            <Typography variant="caption" component="div" sx={{ mt: 0.25 }}>• {t('import.guide.tip2')}</Typography>
+          </Alert>
           <Accordion elevation={0} disableGutters sx={{ bgcolor: 'transparent', '&:before': { display: 'none' } }}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0, minHeight: 0 }}>
               <Typography variant="body2" fontWeight={600}>{t('import.guide.steps')}</Typography>
@@ -143,6 +150,9 @@ export default function ImportPage() {
                     <StepLabel>{s.label}</StepLabel>
                     <StepContent>
                       <Typography variant="caption" color="text.secondary">{s.detail}</Typography>
+                      {s.note && (
+                        <Typography variant="caption" fontWeight={700} display="block" sx={{ mt: 0.5 }}>{s.note}</Typography>
+                      )}
                     </StepContent>
                   </Step>
                 ))}
