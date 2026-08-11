@@ -1,6 +1,6 @@
-import { Box, Typography, Stack, TextField, InputAdornment, Button, Card, CardContent, Chip } from '@mui/material';
+import { Box, Typography, Stack, Button, Card, CardContent, Chip } from '@mui/material';
 import BoltIcon from '@mui/icons-material/Bolt';
-import PaidIcon from '@mui/icons-material/Paid';
+import EditIcon from '@mui/icons-material/Edit';
 import SavingsIcon from '@mui/icons-material/Savings';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
@@ -19,12 +19,12 @@ import {
 } from '../utils/analytics';
 import { formatKWh, formatNIS, formatPercent } from '../utils/format';
 
-const gridCards = { display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: 'repeat(4, 1fr)' } };
+const gridCards = { display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr 1fr', lg: 'repeat(4, 1fr)' } };
 const gridCharts = { display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } };
 
-export default function Dashboard({ onNavigate }: { onNavigate: (tab: string) => void }) {
+export default function Dashboard({ onNavigate, onOpenSettings }: { onNavigate: (tab: string) => void; onOpenSettings: () => void }) {
   const { t, i18n } = useTranslation();
-  const { records, summary, comparison, basePrice, setBasePrice, timeBoundaries } = useApp();
+  const { records, summary, comparison, basePrice, timeBoundaries } = useApp();
 
   const charts = useMemo(() => {
     const weekdayLabel = (i: number) => t(`charts.weekday.${WEEKDAY_KEYS[i]}`);
@@ -61,15 +61,17 @@ export default function Dashboard({ onNavigate }: { onNavigate: (tab: string) =>
 
   return (
     <Stack spacing={3}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={2}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} flexWrap="wrap" useFlexGap>
         <Typography variant="h4">{t('dashboard.title')}</Typography>
-        <TextField
-          label={t('dashboard.basePrice')} type="number" size="small" value={basePrice}
-          onChange={(e) => setBasePrice(Math.max(0, Number(e.target.value)))}
-          inputProps={{ step: 0.01, min: 0 }}
-          InputProps={{ endAdornment: <InputAdornment position="end">{t('settings.perKwh')}</InputAdornment> }}
-          sx={{ maxWidth: 200 }}
-        />
+        <Stack direction="row" spacing={0.75} alignItems="center">
+          <Typography variant="caption" color="text.secondary">{t('dashboard.basePrice')}</Typography>
+          <Chip
+            size="small" variant="outlined" clickable onClick={onOpenSettings}
+            icon={<EditIcon sx={{ fontSize: 16 }} />}
+            label={`${basePrice} ${t('settings.perKwh')}`}
+            aria-label={t('dashboard.editBasePrice')}
+          />
+        </Stack>
       </Stack>
 
       <FiltersBar />
@@ -79,7 +81,8 @@ export default function Dashboard({ onNavigate }: { onNavigate: (tab: string) =>
         <StatCard title={t('dashboard.cards.totalConsumption')} value={formatKWh(summary.totalConsumption)}
           subtitle={`${summary.startDate} → ${summary.endDate}`} icon={<BoltIcon />} color="#1976d2" />
         <StatCard title={t('dashboard.cards.baseCost')} value={formatNIS(comparison?.baseCost ?? 0)}
-          subtitle={t('dashboard.cards.baseCostSub', { price: formatNIS(basePrice, 4) })} icon={<PaidIcon />} color="#ed6c02" />
+          subtitle={t('dashboard.cards.baseCostSub', { price: formatNIS(basePrice, 4) })}
+          icon={<Typography sx={{ fontWeight: 700, fontSize: 20, lineHeight: 1 }}>₪</Typography>} color="#ed6c02" />
         <StatCard title={t('dashboard.cards.cheapestPlan')} value={cheapest ? cheapest.planName : t('common.dash')}
           subtitle={cheapest ? t('dashboard.cards.totalSuffix', { value: formatNIS(cheapest.totalCost) }) : t('dashboard.cards.addPlans')}
           icon={<EmojiEventsIcon />} color="#2e7d32" accent />

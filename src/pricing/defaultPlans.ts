@@ -133,4 +133,4 @@ export function defaultPlans(): TariffPlan[] {
 }
 
 /** Default base price per kWh in NIS (IEC residential tariff). */
-export const DEFAULT_BASE_PRICE = 0.6432;
+export const DEFAULT_BASE_PRICE = 0.6352;

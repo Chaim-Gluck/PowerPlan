@@ -35,7 +35,7 @@ export default function StatCard({ title, value, subtitle, icon, color = '#1976d
             </Avatar>
           )}
         </Box>
-        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+        <Typography sx={{ fontWeight: 700, fontSize: { xs: '1.1rem', sm: '1.5rem' }, wordBreak: 'break-word' }}>
           {value}
         </Typography>
         {subtitle && (

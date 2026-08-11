@@ -59,6 +59,7 @@
   "dashboard": {
     "title": "Dashboard",
     "basePrice": "Base price",
+    "editBasePrice": "Edit base price in settings",
     "empty": {
       "title": "No data yet",
       "body": "Import your IEC meter export (or load the sample) to see your personalized tariff analysis.",

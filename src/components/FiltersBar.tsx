@@ -28,19 +28,25 @@ export default function FiltersBar() {
   };
 
   return (
-    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }} sx={{ mb: 1 }} flexWrap="wrap" useFlexGap>
-      <DatePicker
-        label={t('filters.from')} value={dateRange[0]} minDate={min} maxDate={max}
-        format="DD/MM/YYYY"
-        onChange={(v) => setDateRange([v, dateRange[1]])}
-        slotProps={{ textField: { size: 'small' } }}
-      />
-      <DatePicker
-        label={t('filters.to')} value={dateRange[1]} minDate={min} maxDate={max}
-        format="DD/MM/YYYY"
-        onChange={(v) => setDateRange([dateRange[0], v])}
-        slotProps={{ textField: { size: 'small' } }}
-      />
+    <Box sx={{ mb: 1, display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: { xs: 1.5, lg: 2 }, alignItems: { lg: 'center' }, flexWrap: 'wrap' }}>
+      <Stack direction="row" spacing={1} sx={{ width: { xs: '100%', lg: 'auto' } }}>
+        <Box sx={{ flex: 1 }}>
+          <DatePicker
+            label={t('filters.from')} value={dateRange[0]} minDate={min} maxDate={max}
+            format="DD/MM/YYYY"
+            onChange={(v) => setDateRange([v, dateRange[1]])}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
+          />
+        </Box>
+        <Box sx={{ flex: 1 }}>
+          <DatePicker
+            label={t('filters.to')} value={dateRange[1]} minDate={min} maxDate={max}
+            format="DD/MM/YYYY"
+            onChange={(v) => setDateRange([dateRange[0], v])}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
+          />
+        </Box>
+      </Stack>
       <ButtonGroup size="small" variant="outlined" sx={{ flexWrap: 'wrap' }}>
         <Button onClick={() => applyPreset('3m')}>{t('filters.preset.3m')}</Button>
         <Button onClick={() => applyPreset('6m')}>{t('filters.preset.6m')}</Button>
@@ -48,21 +54,22 @@ export default function FiltersBar() {
         <Button onClick={() => applyPreset('ytd')}>{t('filters.preset.ytd')}</Button>
         <Button onClick={() => applyPreset('all')}>{t('filters.preset.all')}</Button>
       </ButtonGroup>
-      <ToggleButtonGroup
-        size="small" exclusive value={filterMode}
-        onChange={(_, v) => v && setFilterMode(v)}
-      >
-        <ToggleButton value="all">{t('filters.allDays')}</ToggleButton>
-        <ToggleButton value="weekday">{t('filters.weekdays')}</ToggleButton>
-        <ToggleButton value="weekend">{t('filters.weekend')}</ToggleButton>
-      </ToggleButtonGroup>
-      <Box sx={{ flexGrow: 1 }} />
-      <Button
-        size="small" startIcon={<RestartAltIcon />}
-        onClick={() => { setDateRange([null, null]); setFilterMode('all'); }}
-      >
-        {t('filters.reset')}
-      </Button>
-    </Stack>
+      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap sx={{ flexGrow: 1 }}>
+        <ToggleButtonGroup
+          size="small" exclusive value={filterMode}
+          onChange={(_, v) => v && setFilterMode(v)}
+        >
+          <ToggleButton value="all">{t('filters.allDays')}</ToggleButton>
+          <ToggleButton value="weekday">{t('filters.weekdays')}</ToggleButton>
+          <ToggleButton value="weekend">{t('filters.weekend')}</ToggleButton>
+        </ToggleButtonGroup>
+        <Button
+          size="small" startIcon={<RestartAltIcon />} sx={{ ml: 'auto' }}
+          onClick={() => { setDateRange([null, null]); setFilterMode('all'); }}
+        >
+          {t('filters.reset')}
+        </Button>
+      </Stack>
+    </Box>
   );
 }

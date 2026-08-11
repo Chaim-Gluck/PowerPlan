@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button, Stack, TextField,
   MenuItem, InputAdornment, Alert, Typography, Divider, Box,
@@ -11,6 +11,8 @@ import { LANGUAGES, type Language } from '../i18n/config';
 interface Props {
   open: boolean;
   onClose: () => void;
+  /** When 'price', open with the base-price field focused and highlighted. */
+  focus?: 'price';
 }
 
 const hh = (h: number) => `${String(h).padStart(2, '0')}:00`;
@@ -22,13 +24,15 @@ const HOURS = Array.from({ length: 24 }, (_, h) => h);
  * Those boundaries are cosmetic — they never affect bill calculations, which
  * always use each plan's own rule time-windows.
  */
-export default function SettingsDialog({ open, onClose }: Props) {
+export default function SettingsDialog({ open, onClose, focus }: Props) {
   const { t } = useTranslation();
   const { basePrice, setBasePrice, timeBoundaries, setTimeBoundaries, language, setLanguage } = useApp();
 
   const [price, setPrice] = useState(basePrice);
   const [b, setB] = useState<TimeBoundaries>(timeBoundaries);
   const [lang, setLang] = useState<Language>(language);
+  const priceRef = useRef<HTMLInputElement>(null);
+  const [highlightPrice, setHighlightPrice] = useState(false);
 
   // Re-seed local draft when the dialog is (re)opened.
   const [wasOpen, setWasOpen] = useState(false);
@@ -40,6 +44,18 @@ export default function SettingsDialog({ open, onClose }: Props) {
   } else if (!open && wasOpen) {
     setWasOpen(false);
   }
+
+  // When opened via the Dashboard pencil, focus + highlight the price field.
+  useEffect(() => {
+    if (open && focus === 'price') {
+      setHighlightPrice(true);
+      const f = setTimeout(() => { priceRef.current?.focus(); priceRef.current?.select(); }, 150);
+      const h = setTimeout(() => setHighlightPrice(false), 1800);
+      return () => { clearTimeout(f); clearTimeout(h); };
+    }
+    setHighlightPrice(false);
+    return undefined;
+  }, [open, focus]);
 
   const error = useMemo(() => {
     if (!(b.dayStart < b.eveningStart && b.eveningStart < b.nightStart)) {
@@ -78,9 +94,13 @@ export default function SettingsDialog({ open, onClose }: Props) {
             <Typography variant="overline" color="text.secondary">{t('settings.basePriceSection')}</Typography>
             <TextField
               type="number" fullWidth size="small" sx={{ mt: 1 }} value={price}
+              inputRef={priceRef}
               onChange={(e) => setPrice(Number(e.target.value))}
               inputProps={{ step: 0.0001, min: 0 }}
-              InputProps={{ endAdornment: <InputAdornment position="end">{t('settings.perKwh')}</InputAdornment> }}
+              InputProps={{
+                endAdornment: <InputAdornment position="end">{t('settings.perKwh')}</InputAdornment>,
+                sx: highlightPrice ? { boxShadow: (th) => `0 0 0 2px ${th.palette.primary.main}`, transition: 'box-shadow .3s' } : { transition: 'box-shadow .3s' },
+              }}
               helperText={t('settings.basePriceHelp')}
             />
           </Box>

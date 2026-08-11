@@ -1,4 +1,8 @@
 import type { ConsumptionRecord, TariffPlan } from '../pricing';
+import { DEFAULT_BASE_PRICE } from '../pricing';
+
+/** Previous default base price, used only to migrate un-customised settings. */
+const PREVIOUS_DEFAULT_BASE_PRICE = 0.6432;
 
 /**
  * localStorage persistence.
@@ -101,7 +105,14 @@ export function loadSettings(): StoredSettings | null {
   const raw = localStorage.getItem(KEYS.settings);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as StoredSettings;
+    const s = JSON.parse(raw) as StoredSettings;
+    // One-time migration: users who never customised the base price still have the
+    // previous default (0.6432). Bump them to the current IEC tariff default so the
+    // app reflects it, without touching anyone who set a deliberate custom price.
+    if (s.basePrice === PREVIOUS_DEFAULT_BASE_PRICE) {
+      s.basePrice = DEFAULT_BASE_PRICE;
+    }
+    return s;
   } catch {
     return null;
   }

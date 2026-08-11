@@ -50,6 +50,8 @@ export default function App() {
   const { t } = useTranslation();
   const [tab, setTab] = useState('dashboard');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsFocus, setSettingsFocus] = useState<'price' | undefined>(undefined);
+  const openSettings = (focus?: 'price') => { setSettingsFocus(focus); setSettingsOpen(true); };
   const isMobile = useMediaQuery('(max-width:600px)');
   const rtl = isRtlLanguage(language);
 
@@ -91,7 +93,7 @@ export default function App() {
                   </IconButton>
                 </Tooltip>
                 <Tooltip title={t('appbar.settings')}>
-                  <IconButton onClick={() => setSettingsOpen(true)} color="inherit">
+                  <IconButton onClick={() => openSettings()} color="inherit">
                     <SettingsIcon />
                   </IconButton>
                 </Tooltip>
@@ -99,7 +101,7 @@ export default function App() {
             </AppBar>
 
             <Container maxWidth="xl" sx={{ py: 3, pb: isMobile ? `${BOTTOM_NAV_HEIGHT + 24}px` : 3 }}>
-              {tab === 'dashboard' && <Dashboard onNavigate={setTab} />}
+              {tab === 'dashboard' && <Dashboard onNavigate={setTab} onOpenSettings={() => openSettings('price')} />}
               {tab === 'import' && <ImportPage />}
               {tab === 'plans' && <PlansPage />}
               {tab === 'comparison' && <ComparisonPage />}
@@ -134,7 +136,7 @@ export default function App() {
               </Paper>
             )}
 
-            <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+            <SettingsDialog open={settingsOpen} focus={settingsFocus} onClose={() => { setSettingsOpen(false); setSettingsFocus(undefined); }} />
           </Box>
         </LocalizationProvider>
       </ThemeProvider>
